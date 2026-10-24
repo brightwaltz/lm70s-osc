@@ -212,6 +212,27 @@ def load_config(path):
     return module
 
 
+def query_device_id(out, input_name, attempts=3, timeout=0.5):
+    """Ask the APC40 for its SysEx device id (as Live does); fall back to 0, Live's default."""
+    replies = []
+    probe = mido.open_input(input_name, callback=replies.append)
+    time.sleep(0.2)  # a freshly opened CoreMIDI input misses the ~10 ms reply otherwise
+    try:
+        for _ in range(attempts):
+            out.send(mido.Message("sysex", data=[0x7E, 0x7F, 0x06, 0x01]))
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                for msg in list(replies):
+                    data = msg.data if msg.type == "sysex" else ()
+                    if len(data) > 12 and data[0] == 0x7E and tuple(data[2:6]) == (0x06, 0x02, 0x47, 0x29):
+                        return data[12]
+                time.sleep(0.02)
+    finally:
+        probe.close()
+    print("APC40 did not answer the identity request; using device id 0", file=sys.stderr)
+    return 0x00
+
+
 def find_port(names, hint):
     for name in names:
         if hint.lower() in name.lower():
@@ -239,14 +260,16 @@ def main():
             print("OSC %s %s" % (address, value), file=sys.stderr)
 
     out = mido.open_output(find_port(mido.get_output_names(), args.midi_port))
-    out.send(mido.Message("sysex", data=[0x47, 0x7F, 0x29, 0x60, 0x00, 0x04, LIVE_MODE, 0x08, 0x02, 0x01]))
+    input_name = find_port(mido.get_input_names(), args.midi_port)
+    device_id = query_device_id(out, input_name)
+    out.send(mido.Message("sysex", data=[0x47, device_id, 0x29, 0x60, 0x00, 0x04, LIVE_MODE, 0x08, 0x02, 0x01]))
     time.sleep(0.2)
     controller = Controller(cfg, send_osc, out.send, log=lambda text: print(text, file=sys.stderr))
     controller.refresh()
-    inp = mido.open_input(find_port(mido.get_input_names(), args.midi_port), callback=controller.handle)
+    inp = mido.open_input(input_name, callback=controller.handle)
 
-    print("APC40 mkII -> OSC %s:%d  fixtures: %s  (Ctrl+C to quit)" % (host, port, ", ".join(controller.fixtures)),
-          file=sys.stderr)
+    print("APC40 mkII (device id 0x%02X) -> OSC %s:%d  fixtures: %s  (Ctrl+C to quit)"
+          % (device_id, host, port, ", ".join(controller.fixtures)), file=sys.stderr)
     try:
         while True:
             time.sleep(1)

@@ -1,0 +1,1187 @@
+<title>LM70S × APC40 mkII × Ableton Live</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+/* Layout: one 1040px column under a sticky section bar; the simulator is a two-pane console (APC40 panel | stage + DMX output). */
+:root {
+  --bg: #ECEEF2;
+  --surface: #FFFFFF;
+  --surface-2: #F5F6F8;
+  --ink: #14171C;
+  --muted: #59606C;
+  --line: #D3D7DE;
+  --accent: #B5570B;
+  --accent-soft: #F7E4D2;
+  --accent-ink: #FFFFFF;
+  --ok: #1D7549;
+  --warn: #8F5B00;
+  --device: #1C1E22;
+  --device-2: #2A2D33;
+  --device-ink: #CDD0D6;
+  --device-dim: #7A7F88;
+  --ring: #FF8A1F;
+  --ring-off: #3B3F46;
+  --stage: #0A0C10;
+  --stage-wall: #141820;
+  --code-bg: #1B1F27;
+  --code-ink: #E6E8EC;
+  --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1217; --surface: #171B22; --surface-2: #1D222B; --ink: #E7E9ED; --muted: #9BA3AF; --line: #2C323C;
+    --accent: #F0A04B; --accent-soft: #3A2A18; --accent-ink: #1A1006; --ok: #5CC08A; --warn: #E0B252;
+    --device: #0B0C0E; --device-2: #1E2126; --code-bg: #0B0D11; --code-ink: #E6E8EC;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1217; --surface: #171B22; --surface-2: #1D222B; --ink: #E7E9ED; --muted: #9BA3AF; --line: #2C323C;
+  --accent: #F0A04B; --accent-soft: #3A2A18; --accent-ink: #1A1006; --ok: #5CC08A; --warn: #E0B252;
+  --device: #0B0C0E; --device-2: #1E2126; --code-bg: #0B0D11; --code-ink: #E6E8EC;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); text-underline-offset: 3px; }
+code, kbd, .mono { font-family: var(--font-mono); font-size: 0.9em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.3; margin: 0; }
+h2 { font-size: 1.55rem; font-weight: 900; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; }
+
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1040px; margin: 0 auto; }
+
+/* Section bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; gap: 20px; }
+.bar .brand { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); white-space: nowrap; padding-block: 12px; }
+.bar nav { overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.bar nav::-webkit-scrollbar { display: none; }
+.bar nav ul { display: flex; gap: 4px; list-style: none; margin: 0; padding: 6px 0; }
+.bar nav a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 13px; white-space: nowrap; }
+.bar nav a:hover { background: var(--surface-2); }
+.bar nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+
+main { display: flex; flex-direction: column; gap: 72px; padding-block: 40px 80px; }
+section { scroll-margin-top: 64px; display: flex; flex-direction: column; gap: 20px; }
+.section-head { display: flex; flex-direction: column; gap: 8px; max-width: 68ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); }
+
+/* Hero */
+.hero { gap: 18px; }
+.hero h1 { font-size: clamp(2rem, 5.2vw, 3.3rem); font-weight: 900; letter-spacing: -0.01em; }
+.hero h1 .x { color: var(--accent); font-weight: 700; padding-inline: .12em; }
+.hero .lede { font-size: 1.05rem; max-width: 62ch; color: var(--ink); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin: 6px 0 0; }
+.facts div { background: var(--surface); padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.facts dt { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.facts dd { margin: 0; font-weight: 500; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+.dot.ok { background: var(--ok); }
+
+/* Flow */
+.flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 26px; }
+.flow li { position: relative; display: flex; min-width: 0; }
+.flow li:not(:last-child)::after { content: "→"; position: absolute; right: -20px; top: 22px; color: var(--muted); font-size: 14px; }
+.node { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); transition: border-color .15s, background .15s; }
+.node:hover { border-color: var(--accent); }
+.node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.node[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.node .n-name { font-weight: 700; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.node .n-role { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.node .n-link { margin-top: auto; padding-top: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
+.flow-detail { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; }
+.flow-detail p { max-width: 62ch; }
+.kv { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.kv div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kv dt { font-size: 12px; color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Setup */
+.progress { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+.progress .track { flex: 1; max-width: 320px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.progress .fill { height: 100%; width: 0; background: var(--ok); transition: width .25s; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 18px 20px 18px 14px; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step .check { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 2px; }
+.step .num { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.step input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; cursor: pointer; }
+.step .body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.step.done h3 { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.step ul, .step ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+.pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ok); border: 1px solid var(--line); vertical-align: 2px; margin-left: 6px; font-family: var(--font-body); font-weight: 500; }
+.note { font-size: 13px; color: var(--muted); }
+
+.cmd { display: flex; align-items: stretch; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; overflow: hidden; min-width: 0; }
+.cmd pre { margin: 0; padding: 10px 14px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; flex: 1; min-width: 0; white-space: pre; }
+.cmd button { all: unset; cursor: pointer; padding: 0 14px; font-size: 12px; color: var(--code-ink); border-left: 1px solid rgba(255,255,255,.12); white-space: nowrap; }
+.cmd button:hover { background: rgba(255,255,255,.08); }
+.cmd button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.seg button { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 0 0 1px var(--line); }
+.seg button:focus-visible { outline: 2px solid var(--accent); }
+
+/* Simulator */
+.console { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.apc { background: var(--device); color: var(--device-ink); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+.apc-head { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; color: var(--device-dim); }
+.apc-head strong { color: var(--device-ink); font-weight: 500; }
+.apc-body { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; }
+.knobs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 8px; }
+.knob { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.k-dial { width: 100%; max-width: 58px; aspect-ratio: 1; border-radius: 50%; cursor: ns-resize; touch-action: none; }
+.k-dial svg { display: block; width: 100%; height: 100%; }
+.k-dial:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.knob.sel .k-cap { stroke: var(--ring); }
+.k-label { font-size: 11px; font-weight: 500; color: var(--device-ink); white-space: nowrap; }
+.k-macro { font-family: var(--font-mono); font-size: 10px; color: var(--device-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.knob.empty .k-label { color: var(--device-dim); }
+.fader-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.fader-wrap { position: relative; height: 196px; display: flex; justify-content: center; }
+.fader { writing-mode: vertical-lr; direction: rtl; width: 28px; height: 196px; margin: 0; accent-color: var(--ring); cursor: ns-resize; }
+.fader-mark { position: absolute; right: -6px; font-family: var(--font-mono); font-size: 9px; color: var(--device-dim); transform: translateY(50%); }
+.fader-label { font-family: var(--font-mono); font-size: 10px; color: var(--device-dim); text-align: center; line-height: 1.3; }
+.apc-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hw { all: unset; cursor: pointer; font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; padding: 6px 10px; border-radius: 4px; background: var(--device-2); color: var(--device-ink); border: 1px solid #000; }
+.hw:hover { filter: brightness(1.25); }
+.hw[aria-pressed="true"] { color: #1A1006; background: var(--ring); }
+.hw:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.bank-label { font-family: var(--font-mono); font-size: 10px; color: var(--device-dim); }
+.readout { border-top: 1px solid var(--device-2); padding-top: 12px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; min-height: 92px; }
+.readout .r-title { font-size: 13px; color: var(--device-ink); font-weight: 500; }
+.readout .mono { color: var(--ring); font-size: 12px; overflow-wrap: anywhere; }
+.readout .r-note { color: var(--device-dim); }
+
+.out { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.stage { position: relative; border-radius: 14px; overflow: hidden; background: var(--stage); }
+.stage svg { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+.stage-meta { position: absolute; left: 12px; right: 12px; top: 10px; display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: #AEB4BF; pointer-events: none; font-variant-numeric: tabular-nums; }
+.stage-hint { position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: #7E8591; pointer-events: none; }
+.strobe-tag { color: var(--ring); }
+@keyframes strobe { 0%, 45% { opacity: 1; } 55%, 100% { opacity: .08; } }
+.light.strobing { animation: strobe var(--strobe-period, 1s) steps(1, end) infinite; }
+
+.panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.panel-head h3 { font-size: 14px; }
+.dmx-scroll { overflow-x: auto; }
+.dmx { display: grid; grid-template-columns: repeat(var(--cols, 14), minmax(38px, 1fr)); gap: 4px; min-width: calc(var(--cols, 14) * 42px); }
+.cell { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; border-radius: 6px; background: var(--surface-2); border: 1px solid transparent; font-variant-numeric: tabular-nums; }
+.cell.hl { border-color: var(--accent); background: var(--accent-soft); }
+.cell .c-ch { font-family: var(--font-mono); font-size: 9px; color: var(--muted); }
+.cell .c-bar { width: 8px; height: 46px; border-radius: 2px; background: var(--line); position: relative; overflow: hidden; }
+.cell .c-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); }
+.cell .c-val { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.cell .c-lab { font-size: 10px; color: var(--muted); white-space: nowrap; }
+.osc-log { list-style: none; margin: 0; padding: 0; font-family: var(--font-mono); font-size: 12px; display: flex; flex-direction: column; gap: 2px; min-height: 120px; }
+.osc-log li { display: flex; gap: 10px; color: var(--muted); }
+.osc-log li:first-child { color: var(--ink); }
+.osc-log .addr { color: var(--accent); }
+.btn { all: unset; cursor: pointer; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn:hover { border-color: var(--accent); }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Ableton-free pad grid */
+.pads-scroll { overflow-x: auto; }
+.pads { background: var(--device); border-radius: 14px; padding: 14px; display: grid; grid-template-columns: repeat(8, minmax(52px, 1fr)); gap: 8px; min-width: 520px; }
+.pad { all: unset; box-sizing: border-box; cursor: pointer; aspect-ratio: 1.35; border-radius: 4px; display: flex; align-items: flex-end; padding: 4px 5px; font-size: 10px; line-height: 1.2; font-weight: 500; overflow: hidden; overflow-wrap: anywhere; box-shadow: inset 0 -2px 0 rgba(0,0,0,.25); transition: transform .1s; }
+.pad:hover { transform: translateY(-1px); }
+.pad:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.pad[aria-pressed="true"] { outline: 2px solid #fff; outline-offset: 2px; }
+.pad.empty { background: var(--device-2); cursor: default; box-shadow: none; }
+.pad-row-label { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--device-dim); margin-top: 2px; }
+.pad-out { font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+
+/* Generic content */
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .03em; background: var(--surface-2); }
+td code { white-space: nowrap; }
+.yes { color: var(--ok); font-weight: 500; }
+.no { color: var(--muted); }
+.form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.field select, .field input[type="number"], .field input[type="text"] { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; min-width: 0; }
+.field input[type="range"] { accent-color: var(--accent); width: 160px; }
+.verdict { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; max-width: 70ch; display: flex; flex-direction: column; gap: 6px; }
+
+details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+details + details { margin-top: -12px; }
+summary { cursor: pointer; padding: 12px 16px; font-weight: 500; list-style-position: inside; }
+details > div { padding: 0 16px 14px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+.faq { display: flex; flex-direction: column; gap: 8px; }
+.faq details + details { margin-top: 0; }
+
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--muted); font-size: 13px; }
+footer .wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+footer ul { margin: 6px 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 4px; }
+
+@media (max-width: 900px) {
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .flow li:not(:last-child)::after { content: "↓"; right: auto; left: 22px; top: auto; bottom: -21px; }
+  .flow-detail { grid-template-columns: minmax(0, 1fr); }
+  .console { grid-template-columns: minmax(0, 1fr); }
+  .apc { max-width: 420px; }
+}
+@media (max-width: 520px) {
+  main { gap: 56px; padding-block: 28px 64px; }
+  .step { grid-template-columns: 30px minmax(0, 1fr); padding-right: 14px; }
+  .bar .brand { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+
+<header class="bar gutter">
+  <div class="wrap">
+    <span class="brand">LM70S / OSC</span>
+    <nav aria-label="セクション">
+      <ul>
+        <li><a href="#flow">しくみ</a></li>
+        <li><a href="#setup">セットアップ</a></li>
+        <li><a href="#sim">シミュレーター</a></li>
+        <li><a href="#clips">クリップ演出</a></li>
+        <li><a href="#nolive">Ableton なし</a></li>
+        <li><a href="#server">別マシン</a></li>
+        <li><a href="#osc">OSC</a></li>
+        <li><a href="#multi">複数台</a></li>
+        <li><a href="#max">Max for Live</a></li>
+        <li><a href="#trouble">トラブル</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="gutter">
+<div class="wrap" style="display:flex;flex-direction:column;gap:inherit;">
+
+  <section class="hero" id="top">
+    <span class="eyebrow">Betopper LM70S · 7×8W RGBW Mini Moving Head</span>
+    <h1>LM70S<span class="x">×</span>APC40 mkII<span class="x">×</span>Ableton Live</h1>
+    <p class="lede">APC40 mkII のノブと Live のクリップで LM70S を動かすためのガイドです。Live 12 Lite のまま使えるように、Live の中のリモートスクリプトが OSC を送り、Python のブリッジが DMX に変換します。Live を使わずに APC40 から直接 OSC を送るモードと、DMX をサーバーから出す構成もあります。</p>
+    <dl class="facts">
+      <div><dt>LM70S 本体</dt><dd>14CH モード · アドレス 001</dd></div>
+      <div><dt>OSC の宛先</dt><dd class="mono">127.0.0.1:9000</dd></div>
+      <div><dt>追加で必要なもの</dt><dd>USB-DMX インターフェース</dd></div>
+      <div><dt>プロジェクト</dt><dd class="mono">~/dev/lm70s-osc</dd></div>
+    </dl>
+    <span class="status"><span class="dot"></span>ブリッジとスクリプトの動作はテストで確認済み。実際の Live と LM70S ではまだ動かしていません。</span>
+  </section>
+
+  <section id="flow">
+    <div class="section-head">
+      <span class="eyebrow">Signal flow</span>
+      <h2>信号の流れ</h2>
+      <p class="lede">使い方は 3 通りあります。構成を切り替えて、各ブロックを選ぶと役割と設定が表示されます。</p>
+    </div>
+    <div class="seg" role="group" aria-label="構成" id="flow-mode">
+      <button type="button" data-flow="live" aria-pressed="true">Ableton 経由</button>
+      <button type="button" data-flow="nolive" aria-pressed="false">Ableton なし</button>
+      <button type="button" data-flow="server" aria-pressed="false">別マシンで DMX</button>
+    </div>
+    <ol class="flow" id="flow-nodes"></ol>
+    <div class="flow-detail" id="flow-detail" aria-live="polite"></div>
+  </section>
+
+  <section id="setup">
+    <div class="section-head">
+      <span class="eyebrow">Setup</span>
+      <h2>セットアップ</h2>
+      <p class="lede">上から順に進めます。チェックはこのブラウザに保存されます。</p>
+    </div>
+    <div class="progress"><span id="progress-text">0 / 6 完了</span><div class="track"><div class="fill" id="progress-fill"></div></div><button class="btn" id="reset-steps" type="button">チェックを外す</button></div>
+    <ol class="steps" id="steps">
+      <li class="step" data-step="body">
+        <div class="check"><span class="num">1</span><input type="checkbox" id="chk-body" aria-label="手順1 完了"></div>
+        <div class="body">
+          <h3>LM70S 本体を設定する</h3>
+          <p>本体パネル（MODE/ESC・UP・DOWN・ENTER）で、チャンネルモードを <strong>14CH</strong>、DMX アドレスを <strong>001</strong>、動作モードを <strong>DMX</strong> にします。9CH でも動きますが、Pan/Tilt が 8bit になり動きが粗くなります。</p>
+          <p>USB-DMX インターフェース → DMX ケーブル（XLR 3pin）→ LM70S の DMX IN の順につなぎます。チェーンの最後にターミネーターを付けると信号が安定します。</p>
+        </div>
+      </li>
+      <li class="step" data-step="venv">
+        <div class="check"><span class="num">2</span><input type="checkbox" id="chk-venv" aria-label="手順2 完了"></div>
+        <div class="body">
+          <h3>ブリッジを準備する <span class="pill">この Mac では済み</span></h3>
+          <div class="cmd"><pre id="cmd-venv">cd ~/dev/lm70s-osc &amp;&amp; python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt</pre><button type="button" data-copy="cmd-venv">コピー</button></div>
+        </div>
+      </li>
+      <li class="step" data-step="script">
+        <div class="check"><span class="num">3</span><input type="checkbox" id="chk-script" aria-label="手順3 完了"></div>
+        <div class="body">
+          <h3>リモートスクリプトを入れる <span class="pill">この Mac では済み</span></h3>
+          <div class="cmd"><pre id="cmd-script">cd ~/dev/lm70s-osc &amp;&amp; ./install_remote_script.sh</pre><button type="button" data-copy="cmd-script">コピー</button></div>
+          <p class="note"><code>~/Music/Ableton/User Library/Remote Scripts/LM70S_OSC</code> にコピーされます。<code>config.py</code> を変えたら再実行してください。</p>
+        </div>
+      </li>
+      <li class="step" data-step="live">
+        <div class="check"><span class="num">4</span><input type="checkbox" id="chk-live" aria-label="手順4 完了"></div>
+        <div class="body">
+          <h3>Live を設定する</h3>
+          <ol>
+            <li>Live を再起動し、<strong>Settings › Link, Tempo &amp; MIDI</strong> を開く</li>
+            <li>Control Surface 1: <code>APC40 mkII</code>（Input/Output も APC40 mkII）</li>
+            <li>Control Surface 2: <code>LM70S_OSC</code>（Input/Output は <strong>None</strong>）</li>
+            <li>MIDI トラックを 1 本作り、名前を <code>LM70S</code> にする</li>
+            <li>Instruments から空の <strong>Instrument Rack</strong> をそのトラックにドロップ</li>
+            <li>Macro 9〜12 も使うなら、Rack の「+」で Macro を 16 個まで表示する</li>
+          </ol>
+          <p class="note">ステータスバーに <code>LM70S_OSC: track 'LM70S': ... -&gt; 127.0.0.1:9000</code> と出れば成功です。MIDI Effect Rack ではなく Instrument Rack を使うのは、トラックにボリュームフェーダーを持たせて全体の明るさに使うためです。</p>
+        </div>
+      </li>
+      <li class="step" data-step="run">
+        <div class="check"><span class="num">5</span><input type="checkbox" id="chk-run" aria-label="手順5 完了"></div>
+        <div class="body">
+          <h3>ブリッジを起動する</h3>
+          <p>お使いの USB-DMX インターフェースの種類を選ぶと、コマンドが切り替わります。</p>
+          <div class="seg" role="group" aria-label="USB-DMX の種類" id="iface">
+            <button type="button" data-iface="pro" aria-pressed="true">Pro 互換</button>
+            <button type="button" data-iface="open" aria-pressed="false">Open DMX 系</button>
+            <button type="button" data-iface="artnet" aria-pressed="false">Art-Net</button>
+            <button type="button" data-iface="none" aria-pressed="false">機材なしで確認</button>
+          </div>
+          <p class="note" id="iface-note"></p>
+          <div class="cmd"><pre id="cmd-run"></pre><button type="button" data-copy="cmd-run">コピー</button></div>
+          <p>Live を使わずに照明だけ確かめるときは、別のターミナルでデモを流します（20 秒間、円を描きながら色が変わります）。</p>
+          <div class="cmd"><pre id="cmd-demo">cd ~/dev/lm70s-osc &amp;&amp; .venv/bin/python tools/osc_send.py demo</pre><button type="button" data-copy="cmd-demo">コピー</button></div>
+          <p class="note">Ctrl+C で止めると、ヘッドを動かさずに消灯してから終了します。</p>
+        </div>
+      </li>
+      <li class="step" data-step="play">
+        <div class="check"><span class="num">6</span><input type="checkbox" id="chk-play" aria-label="手順6 完了"></div>
+        <div class="body">
+          <h3>APC40 で動かす</h3>
+          <p>Live でトラック <code>LM70S</code> を選ぶと、DEVICE CONTROL の 8 つのノブが Rack の Macro に割り当たります。<strong>DEV. LOCK</strong> を押しておくと、他のトラックを選んでもノブは照明を操作したままです。LM70S トラックのフェーダーが全体の明るさです。</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="sim">
+    <div class="section-head">
+      <span class="eyebrow">Simulator</span>
+      <h2>操作シミュレーター</h2>
+      <p class="lede">ノブを上下にドラッグするか、選んで矢印キーで回します。ブリッジと同じ計算で、LM70S に届く DMX の値と、Live が送る OSC を表示します。ステージ上をドラッグすると Pan/Tilt が動きます。</p>
+    </div>
+    <div class="console">
+      <div class="apc" aria-label="APC40 mkII の操作部（模式図）">
+        <div class="apc-head"><strong>APC40 mkII</strong><span id="bank-label">DEVICE CONTROL · BANK 1</span></div>
+        <div class="apc-body">
+          <div class="fader-col">
+            <div class="fader-wrap">
+              <input type="range" class="fader" id="fader" min="0" max="1" step="0.001" value="0.85" aria-label="LM70S トラックのフェーダー（マスター）">
+              <span class="fader-mark" style="bottom: 85%">0dB</span>
+            </div>
+            <span class="fader-label">LM70S<br><span id="fader-pct">100%</span></span>
+          </div>
+          <div class="knobs" id="knobs"></div>
+        </div>
+        <div class="apc-buttons">
+          <button type="button" class="hw" id="bank-prev" aria-label="Macro 1〜8 を表示">◀ BANK</button>
+          <button type="button" class="hw" id="bank-next" aria-label="Macro 9〜16 を表示">BANK ▶</button>
+          <button type="button" class="hw" id="sim-reset">RESET</button>
+        </div>
+        <div class="readout" id="readout" aria-live="polite"></div>
+      </div>
+
+      <div class="out">
+        <div class="stage" id="stage">
+          <svg id="stage-svg" viewBox="0 0 400 250" role="img" aria-label="LM70S の照射位置と色の模式図">
+            <defs>
+              <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A1F29"/><stop offset="1" stop-color="#0C0E13"/></linearGradient>
+              <radialGradient id="spot-g"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".35" id="spot-mid" stop-color="#f80" stop-opacity=".9"/><stop offset="1" id="spot-edge" stop-color="#f80" stop-opacity="0"/></radialGradient>
+              <linearGradient id="cone-g" gradientUnits="userSpaceOnUse" x1="200" y1="232" x2="200" y2="80"><stop offset="0" id="cone-a" stop-color="#f80" stop-opacity=".55"/><stop offset="1" id="cone-b" stop-color="#f80" stop-opacity=".12"/></linearGradient>
+            </defs>
+            <rect width="400" height="250" fill="url(#wall)"/>
+            <line x1="0" y1="206" x2="400" y2="206" stroke="#232833" stroke-width="1"/>
+            <g id="grid" stroke="#1C212B" stroke-width="1"></g>
+            <g class="light" id="light">
+              <polygon id="cone" fill="url(#cone-g)"/>
+              <circle id="spot" r="40" fill="url(#spot-g)"/>
+            </g>
+            <g transform="translate(200 226)">
+              <rect x="-22" y="4" width="44" height="14" rx="3" fill="#2A2E36"/>
+              <path d="M-16 4 L-16 -10 Q0 -24 16 -10 L16 4 Z" fill="#3A3F49"/>
+              <circle cx="0" cy="-8" r="6" fill="#111" stroke="#555B66" stroke-width="1"/>
+            </g>
+          </svg>
+          <div class="stage-meta"><span id="pt-read">Pan 270° · Tilt 135°</span><span id="lvl-read"></span></div>
+          <div class="stage-hint">模式図。実際の照射位置は設置向きで変わります</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>DMX 出力（LM70S が受け取る値）</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <div class="seg" role="group" aria-label="チャンネルモード" id="mode">
+                <button type="button" data-mode="14" aria-pressed="true">14CH</button>
+                <button type="button" data-mode="9" aria-pressed="false">9CH</button>
+              </div>
+              <button type="button" class="btn" id="blackout" aria-pressed="false">Blackout</button>
+            </div>
+          </div>
+          <div class="dmx-scroll"><div class="dmx" id="dmx"></div></div>
+          <p class="note" id="master-note"></p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Live が送る OSC</h3><span class="note mono">→ 127.0.0.1:9000</span></div>
+          <ul class="osc-log" id="osc-log"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="clips">
+    <div class="section-head">
+      <span class="eyebrow">Clips</span>
+      <h2>クリップで照明を演出する</h2>
+      <p class="lede">Macro はクリップのエンベロープで自動化できます。照明の動きをクリップにしておけば、APC40 のグリッドから曲に合わせて起動できます。</p>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <h3>照明クリップを作る</h3>
+        <ol style="margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:4px;">
+          <li>LM70S トラックに空の MIDI クリップを作る</li>
+          <li>Clip View の <strong>Envelopes</strong> で Device = Instrument Rack、Control = Macro を選ぶ</li>
+          <li>Pan をサイン波で振る、Red から Blue に変える、などを描く</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>曲と同期させる</h3>
+        <p>クリップは Live の Launch Quantization（グローバル クオンタイズ）で小節頭にそろって切り替わります。音楽のクリップと照明クリップを同じシーン行に置けば、シーン起動ボタン一つで両方が切り替わります。</p>
+      </div>
+      <div class="card">
+        <h3>Lite で気をつけること</h3>
+        <p>Live 12 Lite はトラックが 8 本までです。照明用に 1 本使うので、音楽に使えるのは 7 本になります。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="nolive">
+    <div class="section-head">
+      <span class="eyebrow">Without Ableton</span>
+      <h2>Ableton なしモード</h2>
+      <p class="lede"><code>tools/apc2osc.py</code> が APC40 mkII を直接読み、照明専用のコントローラーとして OSC を送ります。Live は使いません。Live が APC40 を使っていると LED と操作がぶつかるので、Live を終了するか、Control Surface から APC40 mkII を外してから起動します。</p>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <h3>起動する</h3>
+        <p class="note">ターミナル 1：ブリッジ</p>
+        <div class="cmd"><pre id="cmd-nl-bridge">cd ~/dev/lm70s-osc &amp;&amp; .venv/bin/python bridge/osc2dmx.py --output enttec-pro --monitor</pre><button type="button" data-copy="cmd-nl-bridge">コピー</button></div>
+        <p class="note">ターミナル 2：APC40</p>
+        <div class="cmd"><pre id="cmd-nl-apc">cd ~/dev/lm70s-osc &amp;&amp; .venv/bin/python tools/apc2osc.py</pre><button type="button" data-copy="cmd-nl-apc">コピー</button></div>
+        <p class="note">起動直後は何も送りません（ブリッジの初期値は中央向き・消灯）。触ったパラメータから送られます。終了すると APC40 の LED を消します。</p>
+      </div>
+      <div class="card">
+        <h3>操作の割り当て</h3>
+        <dl class="kv">
+          <div><dt>DEVICE CONTROL ノブ 1–8</dt><dd>Pan · Tilt · Dimmer · Strobe · Red · Green · Blue · White（Ableton 経由と同じ並び。LED リングに値を表示）</dd></div>
+          <div><dt>TRACK CONTROL ノブ 1–4（上段）</dt><dd>Speed · Color · Color Speed · Program</dd></div>
+          <div><dt>トラックフェーダー 1–8</dt><dd>1〜8 台目の Dimmer</dd></div>
+          <div><dt>マスターフェーダー</dt><dd>全台の Master（明るさの掛け算）</dd></div>
+          <div><dt>TRACK SELECT 1–8 / MASTER</dt><dd>ノブとパッドの送り先を 1〜8 台目 / 全台（<code>/all</code>）に切り替え。選択中のボタンが点灯</dd></div>
+          <div><dt>STOP ALL CLIPS</dt><dd>ブラックアウトの ON/OFF。SHIFT と一緒に押すと選択中の台をリセット</dd></div>
+        </dl>
+      </div>
+    </div>
+    <div class="card">
+      <h3>クリップグリッドのプリセット</h3>
+      <p class="note">パッドを押すと、そのパッドが送る OSC を表示し、上の操作シミュレーターにも反映します。中身は <code>tools/apc2osc_config.py</code> の <code>PRESET_ROWS</code> で変えられます。</p>
+      <div class="pads-scroll"><div class="pads" id="pads" aria-label="APC40 mkII クリップグリッド（模式図）"></div></div>
+      <p class="pad-out" id="pad-out">パッドを押すと、送る内容がここに出ます。</p>
+    </div>
+  </section>
+
+  <section id="server">
+    <div class="section-head">
+      <span class="eyebrow">Remote DMX</span>
+      <h2>別マシンで DMX を出す</h2>
+      <p class="lede">ブリッジは Linux でも動きます。USB-DMX を Raspberry Pi などのサーバーにつなぎ、APC40（または Live）側の Mac から LAN 越しに OSC を送れます。サーバーの名前を入れると、下のコマンドが書き換わります。</p>
+    </div>
+    <div class="card">
+      <div class="form-row">
+        <label class="field" for="srv-user">ユーザー名
+          <input type="text" id="srv-user" value="pi" spellcheck="false" style="width:120px">
+        </label>
+        <label class="field" for="srv-host">サーバーのホスト名 / IP
+          <input type="text" id="srv-host" value="raspberrypi.local" spellcheck="false" style="width:220px">
+        </label>
+      </div>
+    </div>
+    <ol class="steps">
+      <li class="step"><div class="check"><span class="num">1</span></div><div class="body">
+        <h3>Mac からフォルダをコピーする</h3>
+        <div class="cmd"><pre id="cmd-srv-sync"></pre><button type="button" data-copy="cmd-srv-sync">コピー</button></div>
+        <p class="note"><code>.venv</code> は除いてコピーします。</p>
+      </div></li>
+      <li class="step"><div class="check"><span class="num">2</span></div><div class="body">
+        <h3>サーバーで準備する</h3>
+        <div class="cmd"><pre id="cmd-srv-venv">cd ~/lm70s-osc &amp;&amp; python3 -m venv .venv &amp;&amp; .venv/bin/pip install python-osc pyserial</pre><button type="button" data-copy="cmd-srv-venv">コピー</button></div>
+        <p class="note">USB シリアルを一般ユーザーで開けるようにします（実行後、一度ログインし直す）。</p>
+        <div class="cmd"><pre id="cmd-srv-group">sudo usermod -aG dialout $USER</pre><button type="button" data-copy="cmd-srv-group">コピー</button></div>
+      </div></li>
+      <li class="step"><div class="check"><span class="num">3</span></div><div class="body">
+        <h3>サーバーでブリッジを起動する</h3>
+        <div class="cmd"><pre id="cmd-srv-run">cd ~/lm70s-osc &amp;&amp; .venv/bin/python bridge/osc2dmx.py --output enttec-pro --monitor</pre><button type="button" data-copy="cmd-srv-run">コピー</button></div>
+        <p class="note">USB-DMX は <code>/dev/ttyUSB*</code> か <code>/dev/ttyACM*</code> として自動で見つかります。ファイアウォールで UDP 9000 を開けておいてください。</p>
+      </div></li>
+      <li class="step"><div class="check"><span class="num">4</span></div><div class="body">
+        <h3>Mac 側の送り先をサーバーにする</h3>
+        <p class="note">Ableton なしモードの場合</p>
+        <div class="cmd"><pre id="cmd-srv-apc"></pre><button type="button" data-copy="cmd-srv-apc">コピー</button></div>
+        <p class="note" id="srv-live-note"></p>
+      </div></li>
+    </ol>
+    <p class="note">APC40 をサーバーに直接つなぎ、サーバー上で <code>apc2osc.py</code> を動かすこともできます（Mac 不要）。その場合はサーバーでも <code>pip install -r requirements.txt</code> を実行します。python-rtmidi のビルドに <code>sudo apt install libasound2-dev</code> が必要なことがあります。</p>
+  </section>
+
+  <section id="osc">
+    <div class="section-head">
+      <span class="eyebrow">OSC reference</span>
+      <h2>OSC アドレス</h2>
+      <p class="lede">TouchOSC など他のアプリやスマホからも、ブリッジへ直接送れます。ブリッジは <code>0.0.0.0:9000</code> で待ち受けます。float は 0.0〜1.0 の割合、int は DMX の生値（0〜255）として扱います。</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>アドレス</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td><code>/lm70s/&lt;param&gt;</code></td><td>pan · tilt · dimmer · strobe · red · green · blue · white · speed · color · color_speed · program · master</td></tr>
+          <tr><td><code>/lm70s/reset</code></td><td>1 を送ると Reset チャンネルを 5 秒間保持（本体のリセット動作）</td></tr>
+          <tr><td><code>/all/&lt;param&gt;</code></td><td>全台に同じ値を送る</td></tr>
+          <tr><td><code>/blackout</code></td><td>1 で全消灯、0 で解除</td></tr>
+          <tr><td><code>/dmx/&lt;ch&gt;</code></td><td>1 チャンネルの値を直接上書き（動作確認用）</td></tr>
+          <tr><td><code>/dmx/clear</code></td><td>直接上書きをすべて解除</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>テスト送信コマンドを作る</h3>
+      <div class="form-row">
+        <label class="field" for="b-target">宛先
+          <select id="b-target"><option value="/lm70s">/lm70s</option><option value="/all">/all</option></select>
+        </label>
+        <label class="field" for="b-param">パラメータ
+          <select id="b-param"></select>
+        </label>
+        <label class="field" for="b-value">値 <span id="b-value-read" class="mono">0.50</span>
+          <input type="range" id="b-value" min="0" max="1" step="0.01" value="0.5">
+        </label>
+      </div>
+      <div class="cmd"><pre id="cmd-osc"></pre><button type="button" data-copy="cmd-osc">コピー</button></div>
+    </div>
+  </section>
+
+  <section id="multi">
+    <div class="section-head">
+      <span class="eyebrow">Multiple fixtures</span>
+      <h2>複数台で使う</h2>
+      <p class="lede">台数とモードを選ぶと、本体に設定するアドレスとブリッジの起動コマンドを計算します。</p>
+    </div>
+    <div class="card">
+      <div class="form-row">
+        <label class="field" for="m-count">台数
+          <input type="number" id="m-count" min="1" max="8" value="2" style="width:90px">
+        </label>
+        <div class="field">モード
+          <div class="seg" role="group" aria-label="複数台のチャンネルモード" id="m-mode">
+            <button type="button" data-mode="14" aria-pressed="true">14CH</button>
+            <button type="button" data-mode="9" aria-pressed="false">9CH</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-scroll"><table><thead><tr><th>名前（OSC）</th><th>本体のアドレス</th><th>使う DMX ch</th></tr></thead><tbody id="m-table"></tbody></table></div>
+      <div class="cmd"><pre id="cmd-multi"></pre><button type="button" data-copy="cmd-multi">コピー</button></div>
+      <p class="note">Live から全台をまとめて動かすときは、<code>remote_script/LM70S_OSC/config.py</code> の <code>OSC_PREFIX</code> を <code>"/all"</code> にして <code>./install_remote_script.sh</code> を再実行します。</p>
+    </div>
+  </section>
+
+  <section id="max">
+    <div class="section-head">
+      <span class="eyebrow">Max for Live</span>
+      <h2>Max for Live があると何が増えるか</h2>
+      <p class="lede">Max for Live は Live 12 Suite に付属し、Standard にはアドオンとして追加できます。Lite と Intro では動きません。Cycling '74 の Max 単体を買っても、Lite の中では使えません。</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>やりたいこと</th><th>今の構成（Lite）</th><th>Suite（Max for Live 込み）</th></tr></thead>
+        <tbody>
+          <tr><td>APC40 で手動操作</td><td class="yes">できる</td><td class="yes">できる</td></tr>
+          <tr><td>クリップで照明を自動化、曲と同期</td><td class="yes">できる</td><td class="yes">できる</td></tr>
+          <tr><td>テンポに合わせて Pan/Tilt を揺らす</td><td>エンベロープを手で描く</td><td class="yes">LFO デバイスを Macro にマップする</td></tr>
+          <tr><td>音に反応させる（キックでストロボ等）</td><td class="no">難しい</td><td class="yes">Envelope Follower で音量を Macro に送る</td></tr>
+          <tr><td>OSC の送信</td><td>自作リモートスクリプト</td><td class="yes">Connection Kit の OSC 送信デバイスでも可</td></tr>
+          <tr><td>ブリッジなしで Live から直接 DMX</td><td class="no">できない</td><td class="yes">Beam for Live（別売、LM70S のプロファイルあり）</td></tr>
+          <tr><td>トラック数</td><td>8 本まで</td><td class="yes">無制限</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="verdict">
+      <h3>判断の目安</h3>
+      <p>APC40 で手動操作し、クリップで演出する分には、今の構成で足ります。<strong>音に反応する照明</strong>や<strong>テンポ同期の揺れを手軽に</strong>付けたい場合、<strong>ブリッジを使わず Live から直接 DMX を出したい</strong>場合は、Suite へのアップグレードで実現できます。</p>
+      <p class="note">定価は Standard が USD 349、Suite が USD 749 です（Ableton のアップグレードページの表示）。Lite からはアップグレード価格が出ることがあるので、Ableton のアカウントで確認してください。Beam for Live は別売で約 USD 199 です。LFO や Envelope Follower が今のリモートスクリプト経由で OSC に流れるかは、まだ確かめていません。</p>
+    </div>
+  </section>
+
+  <section id="trouble">
+    <div class="section-head">
+      <span class="eyebrow">Troubleshooting</span>
+      <h2>うまく動かないとき</h2>
+    </div>
+    <div class="faq">
+      <details><summary>Live のステータスバーに何も出ない</summary><div><p>Live のログ <code>~/Library/Preferences/Ableton/Live 12.4.7/Log.txt</code> で <code>LM70S_OSC</code> を検索してください。トラック名が <code>LM70S</code> になっているか、Control Surface 2 に <code>LM70S_OSC</code> が選ばれているかも確認します。</p></div></details>
+      <details><summary>ブリッジに OSC が届かない</summary><div><p>ブリッジに <code>--verbose</code> を付けて起動すると、受信した OSC をすべて表示します。何も出ない場合は、ポート番号（9000）が <code>config.py</code> と一致しているか確認してください。</p></div></details>
+      <details><summary>OSC は届くのに光らない</summary><div><p>Dimmer とフェーダーの両方が上がっているか確認します。Master は Dimmer × フェーダーで決まります。<code>tools/osc_send.py /dmx/6 100i</code> のように生値を送ると、本体が反応するか直接確かめられます。</p></div></details>
+      <details><summary>USB-DMX インターフェースが見つからない</summary><div><p>Mac は <code>ls /dev/cu.*</code>、Linux は <code>ls /dev/ttyUSB* /dev/ttyACM*</code> でデバイス名を調べ、<code>--port /dev/cu.usbserial-XXXX</code> のように指定します。FTDI 系のケーブルは <code>open-dmx</code>、ENTTEC Pro や DMXKing は <code>enttec-pro</code> を選びます。</p><p>Linux で Permission denied と出る場合は、ユーザーが <code>dialout</code> グループに入っているか確認してください。</p></div></details>
+      <details><summary>Ableton なしモードで LED がおかしい、反応が二重になる</summary><div><p>Live が APC40 を Control Surface として使っていないか確認してください。Live を終了するか、Control Surface 1 を None にしてから <code>apc2osc.py</code> を起動します。</p></div></details>
+      <details><summary>Speed の向きが逆に感じる</summary><div><p>本体の仕様です。0 が最速の機種が多いので、Rack の Macro の範囲を反転して好みに合わせてください。</p></div></details>
+      <details><summary>Open DMX 系でちらつく</summary><div><p>マイコンを持たない USB-DMX は、PC 側で DMX のタイミングを作るため途切れやすくなります。ちらつく場合は Pro 互換のインターフェースを使うか、<code>--fps 30</code> のように送信レートを下げてください。</p></div></details>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer class="gutter">
+  <div class="wrap">
+    <div>
+      <strong>ファイル</strong>
+      <ul>
+        <li><code>bridge/osc2dmx.py</code> OSC → DMX ブリッジ</li>
+        <li><code>bridge/lm70s.py</code> LM70S のチャンネル定義</li>
+        <li><code>remote_script/LM70S_OSC/</code> Live のリモートスクリプト</li>
+        <li><code>tools/osc_send.py</code> テスト送信とデモ</li>
+        <li><code>tools/apc2osc.py</code> Ableton なしモード</li>
+        <li><code>tools/apc2osc_config.py</code> パッドとノブの割り当て</li>
+      </ul>
+    </div>
+    <div>
+      <strong>出典</strong>
+      <ul>
+        <li><a href="https://www.manualslib.tech/en-gb/guide/469672/betopper-mini-moving-head-lm70s-7x8w-rgbw-mini-stage-lights-moving-head-manual.html" target="_blank" rel="noopener">LM70S ユーザーマニュアル（9CH / 14CH 表）</a></li>
+        <li><a href="https://forum.showsync.com/t/betopper-lm70s-profile-needs-tweaking/2438" target="_blank" rel="noopener">ShowSync フォーラム：LM70S の Master チャンネル</a></li>
+        <li><a href="https://help.ableton.com/hc/en-us/articles/206407124" target="_blank" rel="noopener">Ableton：Max for Live の購入</a></li>
+        <li><a href="https://support.cycling74.com/hc/articles/360049845974-Common-questions-about-Max-for-Live" target="_blank" rel="noopener">Cycling '74：Max for Live のよくある質問</a></li>
+        <li><a href="https://www.ableton.com/en/upgrade-live/" target="_blank" rel="noopener">Ableton：Live のアップグレード</a></li>
+        <li><a href="https://showsync.com/beam-for-live" target="_blank" rel="noopener">ShowSync：Beam for Live</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* Copy buttons */
+  function selectText(el) {
+    const r = document.createRange(); r.selectNodeContents(el);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  }
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("[data-copy]");
+    if (!btn) return;
+    const target = document.getElementById(btn.dataset.copy);
+    const text = target.textContent;
+    const done = msg => { btn.textContent = msg; setTimeout(() => { btn.textContent = "コピー"; }, 1600); };
+    const fallback = () => { selectText(target); done("選択しました"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => done("コピーしました"), fallback);
+    } else fallback();
+  });
+
+  /* Segmented controls */
+  function segmented(group, onChange) {
+    group.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b || !group.contains(b)) return;
+      $$("button", group).forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      onChange(b);
+    });
+  }
+
+  /* ---------- Signal flow ---------- */
+  const NODE_BRIDGE = { name: "osc2dmx.py", role: "OSC → DMX ブリッジ", link: "USB", body: "OSC を LM70S のチャンネルに変換し、毎秒 40 回 DMX を送ります。Dimmer と Strobe を 1 つの Master チャンネルにまとめ、Pan/Tilt は 16bit で出力します。", kv: [["待ち受け", "0.0.0.0:9000"], ["出力", "enttec-pro / open-dmx / artnet / monitor"]] };
+  const NODE_IFACE = { name: "USB-DMX", role: "インターフェース", link: "DMX512 · XLR 3pin", body: "PC の USB を DMX 信号に変えます。ENTTEC DMX USB Pro や DMXKing ultraDMX Micro などの Pro 互換機が安定します。Art-Net ノードを使う場合は LAN 経由になります。", kv: [["推奨", "Pro 互換（enttec-pro）"], ["安価なケーブル", "FTDI 系なら open-dmx"]] };
+  const NODE_FIXTURE = { name: "LM70S", role: "7×8W RGBW ムービングヘッド", link: "", body: "DMX 入力だけを持つ照明です。Pan 540°、Tilt 270° で動きます。14CH モードでは Pan/Tilt の微調整チャンネルも使えます。", kv: [["本体の設定", "14CH · アドレス 001 · DMX モード"], ["チャンネル数", "9CH または 14CH"]] };
+  const FLOWS = {
+    nolive: [
+      { name: "APC40 mkII", role: "照明専用コントローラー", link: "USB MIDI", body: "Live を使わず、apc2osc.py が APC40 を直接読みます。ノブ、フェーダー、クリップグリッドのプリセットがすべて照明用になり、LED が現在の値を表示します。", kv: [["注意", "Live が APC40 を使っていない状態で起動する"], ["割り当て", "tools/apc2osc_config.py"]] },
+      { name: "apc2osc.py", role: "APC40 → OSC", link: "OSC / UDP :9000", body: "APC40 mkII を Ableton Live モードに切り替え、操作を OSC に変換します。TRACK SELECT で送り先の台を切り替えられます。", kv: [["起動", ".venv/bin/python tools/apc2osc.py"], ["送り先の変更", "--host / --port、または OSC_HOST"]] },
+      NODE_BRIDGE, NODE_IFACE, NODE_FIXTURE,
+    ],
+    server: [
+      { name: "APC40 mkII", role: "コントローラー", link: "USB MIDI", body: "Mac につなぎます。Ableton 経由でも、Ableton なしモードでも使えます。", kv: [["サーバーに直接つなぐ", "サーバー上で apc2osc.py を動かせば Mac は不要"]] },
+      { name: "Mac", role: "apc2osc.py または Live + LM70S_OSC", link: "OSC / UDP 9000（LAN）", body: "OSC の送り先をサーバーにします。Ableton なしモードは --host、Ableton 経由は config.py の OSC_HOST を書き換えます。", kv: [["Ableton なし", "tools/apc2osc.py --host <サーバー>"], ["Ableton 経由", "config.py の OSC_HOST → 再インストール"]] },
+      { name: "サーバー / Raspberry Pi", role: "osc2dmx.py", link: "USB", body: "Linux でブリッジを動かします。必要なのは python-osc と pyserial だけです。USB-DMX は /dev/ttyUSB* か /dev/ttyACM* として自動で見つかります。", kv: [["待ち受け", "0.0.0.0:9000（UDP 9000 を開ける）"], ["権限", "dialout グループに入れる"]] },
+      NODE_IFACE, NODE_FIXTURE,
+    ],
+  };
+  FLOWS.live = [
+    { name: "APC40 mkII", role: "コントローラー", link: "USB MIDI", body: "Live の標準スクリプト APC40 mkII が担当します。クリップの起動、ミキサー、DEVICE CONTROL の 8 ノブはいつも通り使えます。", kv: [["Live の設定", "Control Surface 1 = APC40 mkII"], ["照明に使う操作", "DEVICE CONTROL のノブ、BANK ボタン、LM70S トラックのフェーダー"]] },
+    { name: "Ableton Live 12 Lite", role: "トラック LM70S + 空の Instrument Rack", link: "Macro の値", body: "照明のパラメータは Rack の Macro として持ちます。ノブで回すことも、クリップのエンベロープで自動化することもできます。フェーダーが全体の明るさになります。", kv: [["Macro 1–8", "Pan · Tilt · Dimmer · Strobe · R · G · B · W"], ["Macro 9–12", "Speed · Color · Color Speed · Program"]] },
+    { name: "LM70S_OSC", role: "自作リモートスクリプト", link: "OSC / UDP :9000", body: "Live の中で動く Python スクリプトです。Macro とフェーダーの値が変わるたびに OSC を送ります。ブリッジを後から起動しても揃うよう、1 秒ごとに全値を送り直します。", kv: [["Live の設定", "Control Surface 2 = LM70S_OSC（Input/Output は None）"], ["設定ファイル", "remote_script/LM70S_OSC/config.py"]] },
+    NODE_BRIDGE, NODE_IFACE, NODE_FIXTURE,
+  ];
+  let flowMode = "live", flowSel = 2;
+  function renderFlow() {
+    const FLOW = FLOWS[flowMode];
+    if (flowSel >= FLOW.length) flowSel = 0;
+    $("#flow-nodes").style.setProperty("--n", FLOW.length);
+    $("#flow-nodes").innerHTML = FLOW.map((n, i) => `
+      <li><button type="button" class="node" data-i="${i}" aria-pressed="${i === flowSel}">
+        <span class="n-name">${esc(n.name)}</span><span class="n-role">${esc(n.role)}</span>
+        ${n.link ? `<span class="n-link">${esc(n.link)} →</span>` : ""}
+      </button></li>`).join("");
+    const n = FLOW[flowSel];
+    $("#flow-detail").innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><h3>${esc(n.name)}</h3><p>${esc(n.body)}</p></div>
+      <dl class="kv">${n.kv.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`;
+  }
+  $("#flow-nodes").addEventListener("click", e => {
+    const b = e.target.closest(".node"); if (!b) return;
+    flowSel = Number(b.dataset.i); renderFlow();
+    const again = $(`.node[data-i="${flowSel}"]`); if (again) again.focus();
+  });
+  segmented($("#flow-mode"), b => { flowMode = b.dataset.flow; flowSel = 1; renderFlow(); });
+  renderFlow();
+
+  /* ---------- Setup checklist ---------- */
+  const STEP_KEY = "lm70s-setup-v1";
+  const checks = store.get(STEP_KEY, {});
+  function renderProgress() {
+    const steps = $$("#steps .step");
+    let done = 0;
+    steps.forEach(s => {
+      const on = !!checks[s.dataset.step];
+      s.classList.toggle("done", on);
+      $("input", s).checked = on;
+      if (on) done++;
+    });
+    $("#progress-text").textContent = `${done} / ${steps.length} 完了`;
+    $("#progress-fill").style.width = `${(done / steps.length) * 100}%`;
+  }
+  $("#steps").addEventListener("change", e => {
+    const s = e.target.closest(".step"); if (!s) return;
+    checks[s.dataset.step] = e.target.checked; store.set(STEP_KEY, checks); renderProgress();
+  });
+  $("#reset-steps").addEventListener("click", () => { Object.keys(checks).forEach(k => delete checks[k]); store.set(STEP_KEY, checks); renderProgress(); });
+  renderProgress();
+
+  const IFACE = {
+    pro: { cmd: "--output enttec-pro --monitor", note: "ENTTEC DMX USB Pro、DMXKing ultraDMX Micro などのマイコン内蔵タイプ。ポートは自動で探します。" },
+    open: { cmd: "--output open-dmx --monitor", note: "ENTTEC Open DMX USB や FTDI 系の安価なケーブル。ちらつく場合は --fps 30 を足してください。" },
+    artnet: { cmd: "--output artnet --artnet-host 192.168.1.50 --monitor", note: "Art-Net ノードの IP アドレスに書き換えてください。" },
+    none: { cmd: "", note: "機材をつながず、LM70S に届く値をターミナルに表示するだけのモードです。" },
+  };
+  function setIface(key) {
+    const it = IFACE[key];
+    $("#cmd-run").textContent = `cd ~/dev/lm70s-osc && .venv/bin/python bridge/osc2dmx.py${it.cmd ? " " + it.cmd : ""}`;
+    $("#iface-note").textContent = it.note;
+    store.set("lm70s-iface", key);
+  }
+  const savedIface = store.get("lm70s-iface", "pro");
+  $$("#iface button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.iface === savedIface)));
+  segmented($("#iface"), b => setIface(b.dataset.iface));
+  setIface(IFACE[savedIface] ? savedIface : "pro");
+
+  /* ---------- Simulator (same math as bridge/lm70s.py) ---------- */
+  const PARAMS = [
+    { key: "pan", label: "Pan", jp: "パン（左右）", def: 0.5, ch: { 14: [1, 2], 9: [1] }, note: "540° を 16bit で送ります（14CH）。" },
+    { key: "tilt", label: "Tilt", jp: "チルト（上下）", def: 0.5, ch: { 14: [3, 4], 9: [2] }, note: "270° を 16bit で送ります（14CH）。" },
+    { key: "dimmer", label: "Dimmer", jp: "調光", def: 0.8, ch: { 14: [6], 9: [3] }, note: "Master チャンネルの調光範囲に変換します。" },
+    { key: "strobe", label: "Strobe", jp: "ストロボ", def: 0, ch: { 14: [6], 9: [3] }, note: "0 で OFF。上げるほど速くなり、Master チャンネルのストロボ範囲を使います。" },
+    { key: "red", label: "Red", jp: "赤", def: 1, ch: { 14: [7], 9: [4] } },
+    { key: "green", label: "Green", jp: "緑", def: 0.35, ch: { 14: [8], 9: [5] } },
+    { key: "blue", label: "Blue", jp: "青", def: 0, ch: { 14: [9], 9: [6] } },
+    { key: "white", label: "White", jp: "白", def: 0, ch: { 14: [10], 9: [7] } },
+    { key: "speed", label: "Speed", jp: "モーター速度", def: 0, ch: { 14: [5], 9: [8] }, note: "0 が最速の機種が多いです。" },
+    { key: "color", label: "Color", jp: "内蔵カラー", def: 0, ch: { 14: [11], 9: [] }, note: "14CH モードのみ。内蔵の色パターンを選びます。" },
+    { key: "color_speed", label: "C.Speed", jp: "カラー速度", def: 0, ch: { 14: [12], 9: [] }, note: "14CH モードのみ。" },
+    { key: "program", label: "Program", jp: "内蔵プログラム", def: 0, ch: { 14: [13], 9: [] }, note: "14CH モードのみ。0〜7 で DMX 操作、8 以上で内蔵の Auto / Sound に切り替わります。" },
+  ];
+  const BY_KEY = Object.fromEntries(PARAMS.map(p => [p.key, p]));
+  const LABELS = {
+    9: ["Pan", "Tilt", "Master", "R", "G", "B", "W", "Speed", "Reset"],
+    14: ["Pan", "PanF", "Tilt", "TiltF", "Speed", "Master", "R", "G", "B", "W", "Color", "CSpd", "Prog", "Reset"],
+  };
+  const MASTER = { 9: { dim: [8, 135], strobe: [136, 240] }, 14: { dim: [8, 134], strobe: [135, 239] } };
+  const FADER_UNITY = 0.85;
+
+  const sim = {
+    v: Object.fromEntries(PARAMS.map(p => [p.key, p.def])),
+    fader: 0.85, mode: 14, blackout: false, bank: 0, sel: "dimmer",
+  };
+
+  // Python's round() is round-half-to-even; match it so the numbers equal the bridge's.
+  function rnd(x) {
+    const f = Math.floor(x), d = x - f;
+    if (Math.abs(d - 0.5) > 1e-9) return Math.round(x);
+    return f % 2 === 0 ? f : f + 1;
+  }
+  const d8 = v => rnd(v * 255);
+  const d16 = v => { const x = rnd(v * 65535); return [x >> 8, x & 255]; };
+  const masterNorm = () => Math.min(1, sim.fader / FADER_UNITY);
+  function masterValue() {
+    const s = sim.v;
+    const level = sim.blackout ? 0 : s.dimmer * masterNorm();
+    if (level <= 0) return 0;
+    const r = MASTER[sim.mode];
+    if (s.strobe > 0) { const [lo, hi] = r.strobe; return lo + rnd(s.strobe * (hi - lo)); }
+    const [lo, hi] = r.dim; return lo + rnd(level * (hi - lo));
+  }
+  function renderDmx() {
+    const s = sim.v;
+    const rgbw = ["red", "green", "blue", "white"].map(k => d8(s[k]));
+    const m = masterValue();
+    if (sim.mode === 9) return [d8(s.pan), d8(s.tilt), m, ...rgbw, d8(s.speed), 0];
+    return [...d16(s.pan), ...d16(s.tilt), d8(s.speed), m, ...rgbw, d8(s.color), d8(s.color_speed), d8(s.program), 0];
+  }
+
+  /* OSC log */
+  const log = [];
+  function pushOsc(addr, val) {
+    const text = typeof val === "number" ? val.toFixed(3) : String(val);
+    if (log.length && log[0].addr === addr) log[0].val = text;
+    else { log.unshift({ addr, val: text }); if (log.length > 7) log.pop(); }
+    $("#osc-log").innerHTML = log.map(l => `<li><span class="addr">${esc(addr === l.addr ? l.addr : l.addr)}</span><span>${esc(l.val)}</span></li>`).join("");
+  }
+
+  /* Knobs */
+  const RING = "M13.03 46.97 A24 24 0 1 1 46.97 46.97";
+  function knobSVG() {
+    return `<svg viewBox="0 0 60 60" aria-hidden="true">
+      <path d="${RING}" fill="none" stroke="var(--ring-off)" stroke-width="4" stroke-linecap="round" pathLength="100"/>
+      <path class="k-arc" d="${RING}" fill="none" stroke="var(--ring)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+      <circle class="k-cap" cx="30" cy="30" r="17" fill="#121316" stroke="#000" stroke-width="1.5"/>
+      <line class="k-ptr" x1="30" y1="30" x2="30" y2="16" stroke="#E8E9EC" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>`;
+  }
+  function bankParams() {
+    const list = sim.bank === 0 ? PARAMS.slice(0, 8) : PARAMS.slice(8, 12);
+    while (list.length < 8) list.push(null);
+    return list;
+  }
+  function buildKnobs() {
+    const wrap = $("#knobs");
+    wrap.innerHTML = "";
+    bankParams().forEach((p, i) => {
+      const macro = sim.bank * 8 + i + 1;
+      const el = document.createElement("div");
+      el.className = "knob" + (p ? "" : " empty");
+      if (!p) {
+        el.innerHTML = `<div class="k-dial" style="cursor:default;opacity:.45">${knobSVG()}</div><span class="k-label">未使用</span><span class="k-macro">M${macro}</span>`;
+        wrap.appendChild(el); return;
+      }
+      el.dataset.key = p.key;
+      el.innerHTML = `<div class="k-dial" role="slider" tabindex="0" aria-label="Macro ${macro} ${esc(p.label)}" aria-valuemin="0" aria-valuemax="127">${knobSVG()}</div>
+        <span class="k-label">${esc(p.label)}</span><span class="k-macro">M${macro} · <span class="k-val"></span></span>`;
+      const dial = $(".k-dial", el);
+      let drag = null;
+      dial.addEventListener("pointerdown", e => {
+        dial.setPointerCapture(e.pointerId); drag = { y: e.clientY, v: sim.v[p.key] };
+        select(p.key); dial.focus({ preventScroll: true }); e.preventDefault();
+      });
+      dial.addEventListener("pointermove", e => { if (drag) setParam(p.key, drag.v + (drag.y - e.clientY) / 160); });
+      const end = () => { drag = null; };
+      dial.addEventListener("pointerup", end); dial.addEventListener("pointercancel", end);
+      dial.addEventListener("dblclick", () => setParam(p.key, p.def));
+      dial.addEventListener("focus", () => select(p.key));
+      dial.addEventListener("keydown", e => {
+        const step = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 10, PageDown: -10 }[e.key];
+        if (step) { setParam(p.key, sim.v[p.key] + step / 127); e.preventDefault(); }
+        else if (e.key === "Home") { setParam(p.key, 0); e.preventDefault(); }
+        else if (e.key === "End") { setParam(p.key, 1); e.preventDefault(); }
+      });
+      wrap.appendChild(el);
+    });
+    $("#bank-label").textContent = `DEVICE CONTROL · BANK ${sim.bank + 1}`;
+    $("#bank-prev").setAttribute("aria-pressed", String(sim.bank === 0));
+    $("#bank-next").setAttribute("aria-pressed", String(sim.bank === 1));
+    updateKnobs();
+  }
+  function updateKnobs() {
+    $$(".knob[data-key]").forEach(el => {
+      const v = sim.v[el.dataset.key];
+      $(".k-arc", el).setAttribute("stroke-dasharray", `${(v * 100).toFixed(2)} 100`);
+      $(".k-ptr", el).setAttribute("transform", `rotate(${-135 + v * 270} 30 30)`);
+      $(".k-val", el).textContent = Math.round(v * 127);
+      $(".k-dial", el).setAttribute("aria-valuenow", String(Math.round(v * 127)));
+      el.classList.toggle("sel", el.dataset.key === sim.sel);
+    });
+  }
+
+  function setParam(key, value, quiet) {
+    const v = Math.min(1, Math.max(0, value));
+    if (v === sim.v[key] && !quiet) return;
+    sim.v[key] = v;
+    if (!quiet) pushOsc(`/lm70s/${key}`, v);
+    renderAll();
+  }
+  function select(key) { sim.sel = key; renderAll(); }
+
+  /* Stage */
+  const SX = p => 40 + p * 320, SY = t => 34 + t * 150;
+  (function drawGrid() {
+    let g = "";
+    for (let i = 0; i <= 8; i++) g += `<line x1="${40 + i * 40}" y1="34" x2="${40 + i * 40}" y2="184"/>`;
+    for (let j = 0; j <= 5; j++) g += `<line x1="40" y1="${34 + j * 30}" x2="360" y2="${34 + j * 30}"/>`;
+    $("#grid").innerHTML = g;
+  })();
+  function renderStage() {
+    const s = sim.v;
+    const lvl = sim.blackout ? 0 : s.dimmer * masterNorm();
+    let r = s.red + s.white * 0.85, g = s.green + s.white * 0.85, b = s.blue + s.white * 0.8;
+    const peak = Math.max(r, g, b);
+    const intensity = peak > 0 ? lvl * Math.min(1, peak) : 0;
+    const hue = peak > 0 ? `rgb(${Math.round(r / peak * 255)}, ${Math.round(g / peak * 255)}, ${Math.round(b / peak * 255)})` : "rgb(0,0,0)";
+    const x = SX(s.pan), y = SY(s.tilt), rad = 40;
+    $("#spot").setAttribute("cx", x); $("#spot").setAttribute("cy", y);
+    $("#spot").setAttribute("opacity", intensity.toFixed(3));
+    $("#cone").setAttribute("points", `194,218 206,218 ${x + rad * 0.7},${y} ${x - rad * 0.7},${y}`);
+    $("#cone").setAttribute("opacity", (intensity * 0.9).toFixed(3));
+    ["#spot-mid", "#spot-edge", "#cone-a", "#cone-b"].forEach(id => $(id).setAttribute("stop-color", hue));
+    const cg = $("#cone-g"); cg.setAttribute("x2", x); cg.setAttribute("y2", y);
+    const light = $("#light");
+    const strobing = s.strobe > 0 && intensity > 0;
+    light.classList.toggle("strobing", strobing);
+    light.style.setProperty("--strobe-period", `${(1.2 - s.strobe * 0.75).toFixed(2)}s`);
+    $("#pt-read").textContent = `Pan ${Math.round(s.pan * 540)}° · Tilt ${Math.round(s.tilt * 270)}°`;
+    $("#lvl-read").innerHTML = sim.blackout ? "BLACKOUT" : strobing ? `<span class="strobe-tag">STROBE ${Math.round(s.strobe * 100)}%</span>` : `明るさ ${Math.round(lvl * 100)}%`;
+  }
+  (function stageDrag() {
+    const svg = $("#stage-svg");
+    let active = false;
+    const move = e => {
+      const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const pan = Math.min(1, Math.max(0, (p.x - 40) / 320)), tilt = Math.min(1, Math.max(0, (p.y - 34) / 150));
+      sim.v.pan = pan; sim.v.tilt = tilt;
+      pushOsc("/lm70s/pan", pan); pushOsc("/lm70s/tilt", tilt);
+      sim.sel = "pan"; renderAll();
+    };
+    svg.addEventListener("pointerdown", e => { active = true; svg.setPointerCapture(e.pointerId); move(e); e.preventDefault(); });
+    svg.addEventListener("pointermove", e => { if (active) move(e); });
+    svg.addEventListener("pointerup", () => { active = false; });
+    svg.addEventListener("pointercancel", () => { active = false; });
+  })();
+
+  /* DMX strip + readout */
+  function renderStrip(values) {
+    const p = BY_KEY[sim.sel];
+    const hl = new Set(p ? p.ch[sim.mode] : []);
+    const dmx = $("#dmx");
+    dmx.style.setProperty("--cols", LABELS[sim.mode].length);
+    dmx.innerHTML = LABELS[sim.mode].map((lab, i) => `
+      <div class="cell${hl.has(i + 1) ? " hl" : ""}">
+        <span class="c-ch">ch${i + 1}</span>
+        <span class="c-bar"><i style="height:${(values[i] / 255 * 100).toFixed(1)}%"></i></span>
+        <span class="c-val">${values[i]}</span>
+        <span class="c-lab">${lab}</span>
+      </div>`).join("");
+    const r = MASTER[sim.mode];
+    $("#master-note").textContent = `Master ch は 0〜7 で消灯、${r.dim[0]}〜${r.dim[1]} で調光、${r.strobe[0]}〜${r.strobe[1]} でストロボ（遅い→速い）。値は Dimmer × フェーダーと Strobe から決まります。`;
+  }
+  function renderReadout(values) {
+    const p = BY_KEY[sim.sel]; if (!p) return;
+    const macro = PARAMS.indexOf(p) + 1;
+    const chs = p.ch[sim.mode];
+    const dmxText = chs.length ? chs.map(c => `ch${c} = ${values[c - 1]}`).join(" · ") : `${sim.mode}CH モードには無し`;
+    $("#readout").innerHTML = `
+      <span class="r-title">Macro ${macro} · ${esc(p.label)}（${esc(p.jp)}）</span>
+      <span class="mono">OSC /lm70s/${p.key} ${sim.v[p.key].toFixed(3)}</span>
+      <span class="mono">DMX ${esc(dmxText)}</span>
+      ${p.note ? `<span class="r-note">${esc(p.note)}</span>` : ""}`;
+  }
+  function renderAll() {
+    const values = renderDmx();
+    updateKnobs(); renderStage(); renderStrip(values); renderReadout(values);
+    $("#fader-pct").textContent = `${Math.round(masterNorm() * 100)}%`;
+  }
+
+  $("#fader").addEventListener("input", e => { sim.fader = Number(e.target.value); pushOsc("/lm70s/master", masterNorm()); renderAll(); });
+  $("#bank-prev").addEventListener("click", () => { sim.bank = 0; if (PARAMS.indexOf(BY_KEY[sim.sel]) >= 8) sim.sel = "pan"; buildKnobs(); renderAll(); });
+  $("#bank-next").addEventListener("click", () => { sim.bank = 1; if (PARAMS.indexOf(BY_KEY[sim.sel]) < 8) sim.sel = "speed"; buildKnobs(); renderAll(); });
+  $("#sim-reset").addEventListener("click", () => {
+    PARAMS.forEach(p => { sim.v[p.key] = p.def; });
+    sim.fader = 0.85; $("#fader").value = "0.85"; sim.blackout = false; $("#blackout").setAttribute("aria-pressed", "false");
+    pushOsc("/lm70s/*", "初期値に戻しました"); renderAll();
+  });
+  $("#blackout").addEventListener("click", e => {
+    sim.blackout = !sim.blackout; e.currentTarget.setAttribute("aria-pressed", String(sim.blackout));
+    pushOsc("/blackout", sim.blackout ? 1 : 0); renderAll();
+  });
+  segmented($("#mode"), b => { sim.mode = Number(b.dataset.mode); renderAll(); });
+
+  buildKnobs();
+  pushOsc("/lm70s/master", 1); pushOsc("/lm70s/red", 1); pushOsc("/lm70s/green", 0.35); pushOsc("/lm70s/dimmer", 0.8);
+  renderAll();
+
+  /* ---------- OSC builder ---------- */
+  $("#b-param").innerHTML = [...PARAMS.map(p => p.key), "master", "reset"].map(k => `<option value="${k}">${k}</option>`).join("");
+  $("#b-param").value = "red";
+  function renderBuilder() {
+    const v = Number($("#b-value").value);
+    $("#b-value-read").textContent = v.toFixed(2);
+    $("#cmd-osc").textContent = `cd ~/dev/lm70s-osc && .venv/bin/python tools/osc_send.py ${$("#b-target").value}/${$("#b-param").value} ${v.toFixed(2)}`;
+  }
+  ["#b-target", "#b-param", "#b-value"].forEach(id => $(id).addEventListener("input", renderBuilder));
+  renderBuilder();
+
+  /* ---------- Multiple fixtures ---------- */
+  let mMode = 14;
+  function renderMulti() {
+    const n = Math.min(8, Math.max(1, Number($("#m-count").value) || 1));
+    const rows = [], args = [];
+    for (let i = 0; i < n; i++) {
+      const name = i === 0 ? "lm70s" : `lm70s${i + 1}`;
+      const addr = 1 + i * mMode;
+      rows.push(`<tr><td><code>/${name}</code></td><td class="mono">${String(addr).padStart(3, "0")}</td><td class="mono">${addr}–${addr + mMode - 1}</td></tr>`);
+      args.push(`--fixture ${name}=${addr}:${mMode}`);
+    }
+    $("#m-table").innerHTML = rows.join("");
+    $("#cmd-multi").textContent = `cd ~/dev/lm70s-osc && .venv/bin/python bridge/osc2dmx.py --output enttec-pro \\\n  ${args.join(" \\\n  ")}`;
+  }
+  $("#m-count").addEventListener("input", renderMulti);
+  segmented($("#m-mode"), b => { mMode = Number(b.dataset.mode); renderMulti(); });
+  renderMulti();
+
+  /* ---------- Ableton-free pad grid (tools/apc2osc_config.py PRESET_ROWS) ---------- */
+  const PAD_ROWS = [
+    ["色", [
+      ["Red", [255, 0, 0], { red: 1.0, green: 0.0, blue: 0.0, white: 0.0 }],
+      ["Orange", [255, 96, 0], { red: 1.0, green: 0.35, blue: 0.0, white: 0.0 }],
+      ["Yellow", [255, 255, 0], { red: 1.0, green: 0.9, blue: 0.0, white: 0.0 }],
+      ["Green", [0, 255, 0], { red: 0.0, green: 1.0, blue: 0.0, white: 0.0 }],
+      ["Cyan", [0, 255, 255], { red: 0.0, green: 1.0, blue: 1.0, white: 0.0 }],
+      ["Blue", [0, 0, 255], { red: 0.0, green: 0.0, blue: 1.0, white: 0.0 }],
+      ["Purple", [160, 0, 255], { red: 0.6, green: 0.0, blue: 1.0, white: 0.0 }],
+      ["White", [255, 255, 255], { red: 0.0, green: 0.0, blue: 0.0, white: 1.0 }],
+    ]],
+    ["位置", [
+      ["Center", [0, 120, 255], { pan: 0.5, tilt: 0.5 }],
+      ["Left", [0, 120, 255], { pan: 0.35, tilt: 0.5 }],
+      ["Right", [0, 120, 255], { pan: 0.65, tilt: 0.5 }],
+      ["Up", [0, 120, 255], { pan: 0.5, tilt: 0.35 }],
+      ["Down", [0, 120, 255], { pan: 0.5, tilt: 0.65 }],
+      ["Audience L", [0, 120, 255], { pan: 0.4, tilt: 0.7 }],
+      ["Audience R", [0, 120, 255], { pan: 0.6, tilt: 0.7 }],
+      ["Ceiling", [0, 120, 255], { pan: 0.5, tilt: 0.1 }],
+    ]],
+    ["ストロボ", [
+      ["Strobe off", [255, 255, 255], { strobe: 0.0 }],
+      ["Strobe 1", [255, 255, 255], { strobe: 0.05 }],
+      ["Strobe 2", [255, 255, 255], { strobe: 0.2 }],
+      ["Strobe 3", [255, 255, 255], { strobe: 0.35 }],
+      ["Strobe 4", [255, 255, 255], { strobe: 0.5 }],
+      ["Strobe 5", [255, 255, 255], { strobe: 0.65 }],
+      ["Strobe 6", [255, 255, 255], { strobe: 0.8 }],
+      ["Strobe 7", [255, 255, 255], { strobe: 1.0 }],
+    ]],
+    ["内蔵プログラム（ch13 の生値）", [
+      ["Manual", [255, 160, 0], { program: 0 }],
+      ["Auto 1", [255, 160, 0], { program: 10 }],
+      ["Auto 4", [255, 160, 0], { program: 55 }],
+      ["Auto 8", [255, 160, 0], { program: 120 }],
+      ["Sound 1", [255, 0, 120], { program: 135 }],
+      ["Sound 4", [255, 0, 120], { program: 180 }],
+      ["Sound 8", [255, 0, 120], { program: 250 }],
+      null,
+    ]],
+    ["ルック", [
+      ["Warm wash", [255, 120, 40], { pan: 0.5, tilt: 0.6, dimmer: 1.0, strobe: 0.0, red: 1.0, green: 0.45, blue: 0.1, white: 0.3 }],
+      ["Cool wash", [60, 120, 255], { pan: 0.5, tilt: 0.6, dimmer: 1.0, strobe: 0.0, red: 0.0, green: 0.3, blue: 1.0, white: 0.2 }],
+      ["Full white", [255, 255, 255], { dimmer: 1.0, strobe: 0.0, red: 1.0, green: 1.0, blue: 1.0, white: 1.0 }],
+      ["Dark", [40, 40, 40], { dimmer: 0.0, strobe: 0.0 }],
+      null, null, null, null,
+    ]],
+  ];
+  const RAW_INT = new Set(["program"]);
+  function renderPads() {
+    let html = "";
+    PAD_ROWS.forEach(([label, pads], r) => {
+      html += `<span class="pad-row-label">${esc(label)}</span>`;
+      pads.forEach((pad, c) => {
+        if (!pad) { html += `<span class="pad empty" aria-hidden="true"></span>`; return; }
+        const [name, [R, G, B]] = pad;
+        const lum = (0.2126 * R + 0.7152 * G + 0.0722 * B) / 255;
+        html += `<button type="button" class="pad" data-r="${r}" data-c="${c}" aria-pressed="false" style="background:rgb(${R},${G},${B});color:${lum > 0.55 ? "#111" : "#fff"}">${esc(name)}</button>`;
+      });
+    });
+    $("#pads").innerHTML = html;
+  }
+  $("#pads").addEventListener("click", e => {
+    const b = e.target.closest(".pad[data-r]"); if (!b) return;
+    $$(".pad[data-r]").forEach(p => p.setAttribute("aria-pressed", String(p === b)));
+    const [name, , params] = PAD_ROWS[Number(b.dataset.r)][1][Number(b.dataset.c)];
+    const sent = [];
+    Object.entries(params).forEach(([k, v]) => {
+      const norm = RAW_INT.has(k) ? v / 255 : v;
+      sim.v[k] = norm;
+      pushOsc(`/lm70s/${k}`, RAW_INT.has(k) ? `${v} (int)` : norm);
+      sent.push(`/lm70s/${k} ${RAW_INT.has(k) ? v : v.toFixed(2)}`);
+    });
+    renderAll();
+    $("#pad-out").textContent = `${name} → ${sent.join(" · ")}`;
+  });
+  renderPads();
+
+  /* ---------- Remote DMX server commands ---------- */
+  function renderServer() {
+    const user = $("#srv-user").value.trim() || "pi";
+    const host = $("#srv-host").value.trim() || "raspberrypi.local";
+    $("#cmd-srv-sync").textContent = `rsync -a --exclude .venv ~/dev/lm70s-osc/ ${user}@${host}:lm70s-osc/`;
+    $("#cmd-srv-apc").textContent = `cd ~/dev/lm70s-osc && .venv/bin/python tools/apc2osc.py --host ${host}`;
+    $("#srv-live-note").innerHTML = `Ableton 経由の場合は <code>remote_script/LM70S_OSC/config.py</code> の <code>OSC_HOST</code> を <code>"${esc(host)}"</code> にして <code>./install_remote_script.sh</code> を再実行します。Live の中では名前解決で待たされないよう、ホスト名ではなく IP アドレスで指定してください。`;
+  }
+  ["#srv-user", "#srv-host"].forEach(id => $(id).addEventListener("input", renderServer));
+  renderServer();
+
+  /* ---------- Section bar highlight ---------- */
+  const links = $$(".bar nav a");
+  const sections = links.map(a => document.getElementById(a.getAttribute("href").slice(1)));
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id));
+      });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    sections.forEach(s => s && io.observe(s));
+  }
+  if (location.hash) {
+    const t = document.getElementById(location.hash.slice(1));
+    const go = () => t && t.scrollIntoView();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(go); else go();
+  }
+})();
+</script>
