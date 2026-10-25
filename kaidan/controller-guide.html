@@ -1,0 +1,507 @@
+<title>怪談サイコロ操作マップ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: a night-stage single-dark page. The APC40 map is the hero; zone colours tie every chart and card back to the controls. */
+:root {
+  color-scheme: dark;
+  --bg: #0D0E13;
+  --surface: #161821;
+  --surface-2: #1E2130;
+  --ink: #ECE7DD;
+  --muted: #9C9AA6;
+  --line: #2B2E3D;
+  --accent: #F2A33A;
+  --device: #1A1B1F;
+  --device-2: #2A2C33;
+  --device-ink: #C9CCD3;
+  --device-dim: #6F737D;
+  --z-story: #F2A33A;
+  --z-drive: #FF7A59;
+  --z-sound: #47C9B0;
+  --z-light: #7FA2FF;
+  --z-laser: #FF4A5A;
+  --z-switch: #B691FF;
+  --z-live: #7C8090;
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.3; }
+h1, h2 { font-family: var(--font-display); font-weight: 800; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; }
+main { padding-block: 36px 88px; }
+main > .wrap { display: flex; flex-direction: column; gap: 72px; }
+section { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 24px; }
+.head { display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); }
+
+/* hero */
+.hero { gap: 16px; }
+.hero h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .02em; }
+.hero h1 span { color: var(--accent); }
+.hero .lede { color: var(--ink); max-width: 66ch; font-size: 1.04rem; }
+.modes { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mode { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.mode b { font-size: 15px; }
+.mode small { font-size: 12px; color: var(--muted); }
+.mode[aria-pressed="true"] { border-color: var(--accent); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--accent); }
+.mode:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.how { font-size: 13px; color: var(--muted); }
+.how kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+
+/* zone chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; }
+.chip i { width: 12px; height: 12px; border-radius: 3px; background: var(--c); flex: none; }
+.chip[aria-pressed="true"] { border-color: var(--c); background: var(--surface-2); }
+.chip:focus-visible { outline: 2px solid var(--accent); }
+
+/* device map */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+.dev-scroll { overflow-x: auto; border-radius: 16px; }
+.dev { background: linear-gradient(180deg, #1F2025, var(--device)); border-radius: 16px; padding: 18px; min-width: 860px; display: grid; grid-template-columns: auto 200px; gap: 22px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 40px rgba(0,0,0,.45); }
+.main { display: grid; grid-template-columns: repeat(8, 54px) 58px; gap: 6px 6px; align-items: center; }
+.cap { font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; color: var(--device-dim); text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
+.cap.left { text-align: left; }
+.rowlab { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; color: var(--device-dim); margin-top: 4px; }
+.ctl { all: unset; box-sizing: border-box; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; text-align: center; font-family: var(--font-mono); font-size: 9px; line-height: 1.1; color: var(--device-ink); background: var(--device-2); border: 1px solid #000; border-radius: 4px; height: 22px; padding: 0 2px; overflow: hidden; transition: opacity .15s, box-shadow .15s; box-shadow: 0 0 0 2px var(--zc, transparent); }
+.ctl:hover { filter: brightness(1.25); }
+.ctl:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.ctl.pad { height: 34px; color: #0D0E13; font-weight: 600; font-family: var(--font-body); font-size: 10px; }
+.ctl.knob { width: 34px; height: 34px; border-radius: 50%; margin: 0 auto; background: radial-gradient(circle at 40% 35%, #3a3d45, #15161a); box-shadow: 0 0 0 3px var(--zc, var(--device-2)); font-size: 8px; }
+.ctl.fader { width: 16px; height: 96px; margin: 0 auto; border-radius: 3px; background: #0B0C0F; }
+.ctl.fader::before { content: ""; position: absolute; left: -7px; right: -7px; top: 42%; height: 12px; border-radius: 2px; background: #C7CBD2; }
+.ctl.xfader { width: 120px; height: 16px; margin: 0 auto; background: #0B0C0F; }
+.ctl.xfader::before { content: ""; position: absolute; top: -6px; bottom: -6px; left: 46%; width: 12px; border-radius: 2px; background: #C7CBD2; }
+.ctl.lit { background: #F6A033; color: #1A1006; }
+.ctl.sel { outline: 2px solid #fff; outline-offset: 2px; }
+.dev.filtering .ctl:not(.on) { opacity: .18; }
+.ctl[data-step]::after { content: attr(data-step); position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; background: #fff; color: #0D0E13; font: 700 10px/16px var(--font-mono); text-align: center; box-shadow: 0 0 0 2px var(--accent); }
+.ctl.knob[data-step]::after, .ctl.fader[data-step]::after { top: -8px; right: -10px; }
+.side { display: flex; flex-direction: column; gap: 10px; }
+.knobs4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 6px; }
+.btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+
+.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel .z { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.panel .z i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+.panel h3 { font-size: 1.15rem; }
+.panel .led { font-size: 13px; border-left: 2px solid var(--accent); padding-left: 10px; color: var(--muted); }
+.panel ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.panel .hint { font-size: 12px; color: var(--muted); }
+
+/* recipes */
+.recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.recipe { all: unset; box-sizing: border-box; cursor: pointer; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.recipe:hover { border-color: var(--c); }
+.recipe:focus-visible { outline: 2px solid var(--accent); }
+.recipe[aria-pressed="true"] { border-color: var(--c); background: var(--surface-2); box-shadow: inset 3px 0 0 var(--c); }
+.recipe .k { font-family: var(--font-mono); font-size: 11px; color: var(--c); letter-spacing: .06em; }
+.recipe b { font-size: 15px; }
+.recipe span { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+/* stories */
+.stories { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+.story { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.story:hover, .story[aria-pressed="true"] { border-color: var(--mc); }
+.story:focus-visible { outline: 2px solid var(--accent); }
+.story .n { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.story b { font-family: var(--font-display); font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.story .mood { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.story .mood i { width: 10px; height: 10px; border-radius: 50%; background: var(--mc); box-shadow: 0 0 8px var(--mc); flex: none; }
+.story .len { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.story .len i { display: block; height: 100%; background: var(--mc); opacity: .8; }
+.story .min { font-family: var(--font-mono); font-size: 11px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* charts */
+.charts { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; }
+.card { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 6px; }
+
+.leds { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.ledrow { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; align-items: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); padding: 10px 12px; }
+.ledrow .sw { height: 24px; border-radius: 4px; border: 1px solid #000; }
+.ledrow .sw.blink { animation: blink .8s steps(1, end) infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.ledrow b { font-size: 13px; display: block; }
+.ledrow span { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* demo timeline */
+.tl { position: relative; height: 92px; margin-top: 8px; }
+.tl .bar { position: absolute; left: 0; right: 0; top: 40px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--z-story), var(--z-light) 35%, var(--z-drive) 55%, var(--z-light) 70%, var(--z-sound)); opacity: .55; }
+.tl .ev { all: unset; cursor: pointer; position: absolute; top: 30px; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; background: var(--bg); border: 2px solid var(--c); display: flex; align-items: center; justify-content: center; font: 600 10px var(--font-mono); color: var(--ink); }
+.tl .ev[aria-pressed="true"] { background: var(--c); color: #0D0E13; }
+.tl .ev:focus-visible { outline: 2px solid #fff; }
+.tl .tick { position: absolute; top: 72px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.tl-scroll { overflow-x: auto; }
+.tl-inner { min-width: 640px; padding: 0 18px; }
+.evtext { font-size: 14px; min-height: 48px; }
+.evtext b { color: var(--accent); font-family: var(--font-mono); margin-right: 8px; }
+
+footer { border-top: 1px solid var(--line); padding-block: 22px 40px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 980px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; }
+  .charts { grid-template-columns: minmax(0, 1fr); }
+  .stories { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  main > .wrap { gap: 56px; }
+  .stories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+
+<main class="gutter">
+<div class="wrap">
+
+  <section class="hero">
+    <span class="eyebrow">AKAI APC40 mkII · 怪談サイコロ · LM70S · LaserCube</span>
+    <h1>怪談サイコロ<span>操作</span>マップ</h1>
+    <p class="lede">APC40 は 2 つの顔を持ちます。ふだんは Ableton Live のコントローラーで、ノブで照明の LM70S を動かします。SHIFT を押しながら MASTER を押すと怪談サイコロ側に切り替わり、パッドで話を選び、ボタンで語りを進め、フェーダーで音と光とレーザーを操ります。ノブはどちらの顔でも照明のままです。</p>
+    <div class="modes" role="group" aria-label="APC40 の顔">
+      <button type="button" class="mode" data-mode="kaidan" aria-pressed="true"><b>怪談サイコロ側</b><small>MASTER が点灯しているとき</small></button>
+      <button type="button" class="mode" data-mode="live" aria-pressed="false"><b>Live 側</b><small>MASTER が消えているとき</small></button>
+    </div>
+    <p class="how">切り替え：<kbd>SHIFT</kbd> を押したまま <kbd>MASTER</kbd>。もう一度押すと戻ります。</p>
+  </section>
+
+  <section id="map">
+    <div class="head">
+      <span class="eyebrow">Control map</span>
+      <h2>どこを触ると、何が起きるか</h2>
+      <p class="lede">色は役割です。色の札を押すと、その役割のボタンだけが浮かび上がります。ボタンを押すと右に説明が出ます。</p>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="役割で絞り込む"></div>
+    <div class="stage">
+      <div class="dev-scroll"><div class="dev" id="dev"></div></div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section id="recipes">
+    <div class="head">
+      <span class="eyebrow">How do I…</span>
+      <h2>やりたいことから探す</h2>
+      <p class="lede">選ぶと、押す順番が地図の上に番号で出ます。</p>
+    </div>
+    <div class="recipes" id="recipe-list"></div>
+  </section>
+
+  <section id="stories">
+    <div class="head">
+      <span class="eyebrow">The 8 columns</span>
+      <h2>パッドの 8 列 = 8 つの話</h2>
+      <p class="lede">列の色は、その話の照明ムードです。バーは語りの長さ（最長は台湾の 12.5 分）。押すと地図の列が光ります。上から 導入・情景・積み上げ・怪異・結末 の 5 段で、どの段からでも始められます。</p>
+    </div>
+    <div class="stories" id="story-list"></div>
+  </section>
+
+  <section id="tension">
+    <div class="head">
+      <span class="eyebrow">How a story builds</span>
+      <h2>段が進むほど、暗く、速く</h2>
+      <p class="lede">話の段に合わせて、照明は自動で暗くなり、心音は速くなります。怪異の場面ではストロボのあと 1 秒暗転し、「ドン」が鳴ります。数値はトラックフェーダーを上げきったときの値です。</p>
+    </div>
+    <div class="charts">
+      <div class="card">
+        <h3>段ごとの照明の明るさと心音</h3>
+        <div class="legend"><span><i style="background:var(--z-light)"></i>照明の明るさ（%）</span><span><i style="background:var(--z-sound)"></i>心音（拍/分）</span><span><i style="background:#fff"></i>怪異の瞬間のストロボ</span></div>
+        <svg id="chart" viewBox="0 0 520 260" role="img" aria-label="段ごとの照明の明るさと心音の速さ"></svg>
+      </div>
+      <div class="card">
+        <h3>LED の読み方</h3>
+        <div class="leds" id="led-list" style="grid-template-columns: minmax(0,1fr)"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="head">
+      <span class="eyebrow">SOLO 1 · one-tap demo</span>
+      <h2>ワンタップデモの 85 秒</h2>
+      <p class="lede">SOLO 1 を押すと、「押入れの向こう」を使って全部の機能を順に見せます。点の上を押すと、その瞬間に何が起きるかが出ます。途中でパッドを押すと手動に移ります。</p>
+    </div>
+    <div class="card">
+      <div class="tl-scroll"><div class="tl-inner"><div class="tl" id="timeline"><div class="bar"></div></div></div></div>
+      <p class="evtext" id="evtext"></p>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer class="gutter"><div class="wrap">
+  <p>起動の順番は「怪談サイコロ起動手順」のページにあります。レーザーは LaserCube Local の画面で出力を許可したときだけ光り、怪談の連動で勝手に点くことはありません。</p>
+</div></footer>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  const ZONES = {
+    story: ["話を選ぶ", "var(--z-story)"],
+    drive: ["語りを進める・怖がらせる", "var(--z-drive)"],
+    sound: ["音", "var(--z-sound)"],
+    light: ["照明（LM70S）", "var(--z-light)"],
+    laser: ["レーザー", "var(--z-laser)"],
+    switch: ["切り替え・デモ", "var(--z-switch)"],
+    live: ["Live のまま", "var(--z-live)"],
+  };
+  const MOODS = { 1: ["青白い月光", "#5078FF"], 2: ["蝋燭のゆらぎ", "#FF6E0A"], 3: ["赤い非常灯", "#FF2A2A"], 4: ["稲光", "#C8C8FF"], 5: ["闇", "#6A44C4"], 6: ["霧の緑", "#28E56E"] };
+  const STORIES = [
+    ["廃校の分教場", 1, 6.4], ["峠の同級生", 6, 4.4], ["トンネルの上の中継", 5, 4.5], ["公演とホテルの女", 3, 3.1],
+    ["旅館の楽屋", 2, 6.3], ["押入れの向こう", 1, 2.8], ["台湾の心霊探訪", 4, 12.5], ["赤坂のスタジオ", 3, 4.4],
+  ];
+  const PARTS = ["導入", "情景", "積み上げ", "怪異", "結末"];
+  const SL = [["サイコロ", "話のサイコロ", "列が回って止まり、その話を導入から流します。"],
+              ["語る/止", "語りの開始 / 一時停止", "語りを止めたり再開したりします。止まっているときに押すとサイコロを振ります。"],
+              ["次へ", "次の段へ", "いまの話の次の段へ進みます。"],
+              ["ドン!", "ドン！", "ストロボ → 1 秒暗転 → 低い衝撃音。強さはフェーダー 6。レーザーを連動していれば 3 秒だけ赤い手形 × 8。"],
+              ["前へ", "前の段へ", "いまの話の一つ前の段へ戻ります。"]];
+  const FADERS = [["sound", "語り", "語りの音量。"], ["sound", "環境音", "低いうなりと風の音量。段が進むほど自動で濃くなります。"], ["sound", "心音", "心音の音量。速さは段に合わせて自動で変わります。"],
+                  ["light", "照明", "LM70S の明るさに掛ける倍率（段ごとの明るさ × この値）。"], ["light", "ゆらぎ", "蝋燭・非常灯・稲光のムードで、明るさが揺れる強さ。"], ["drive", "驚かし", "怪異の場面と SCENE LAUNCH 4 のストロボと「ドン」の強さ。"],
+                  ["laser", "レーザー明", "レーザーの明るさ（0〜5%。LaserCube Local の上限内）。"], ["laser", "レーザー大", "レーザーの図形の大きさ（5〜30%）。"]];
+  const LASER = [null, ["LASER", "レーザーの開始 / 停止", "点灯中は出力中。実機は LaserCube Local の画面で出力を許可しているときだけ開始できます。"],
+                 ["円", "図形：円", "いまの図形のボタンが点灯します。"], ["8の字", "図形：8 の字", "いまの図形のボタンが点灯します。"], ["三角", "図形：三角", "いまの図形のボタンが点灯します。"],
+                 ["手形", "図形：赤い手形", "左右の手が揺れながら濃く薄く。手の数はクロスフェーダー。"],
+                 ["連動", "怪談に連動", "ON の間、照明ムードで色、段の緊張で速さが変わり、怪異で 3 秒だけ赤い手形 × 8。点けたり消したりはしません。"],
+                 ["色", "色を次へ", "赤 → 橙 → 黄 → 緑 → 水色 → 青 → 紫 → 白。"]];
+  const DK = ["Pan", "Tilt", "Dim", "Strb", "R", "G", "B", "W"];
+  const DK_LONG = ["パン（左右）", "チルト（上下）", "明るさ", "ストロボ", "赤", "緑", "青", "白"];
+
+  /* control specs: id -> {kaidan: [label, zone, title, desc, led], live: [...]} */
+  const C = {};
+  const both = (id, spec) => { C[id] = { kaidan: spec, live: spec }; };
+  for (let i = 0; i < 8; i++) both(`tk${i}`, ["", "live", `TRACK CONTROL ノブ ${i + 1}`, "Live のパンやセンドを回します。怪談サイコロでは使いません。"]);
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 8; c++) {
+    const [title, mood] = STORIES[c];
+    C[`pad${r}${c}`] = {
+      kaidan: [PARTS[r], "story", `${title} ／ ${PARTS[r]}`, `${c + 1} 列目「${title}」を${PARTS[r]}から流します。別の話を流していても、すぐ切り替わります。`, `色 = 照明ムード「${MOODS[mood][0]}」。いま流している段が点滅、語り終えた段はやや明るく残ります。`, MOODS[mood][1]],
+      live: ["clip", "live", `クリップスロット（${c + 1} 列 ${r + 1} 段）`, "Live のクリップを起動します。LM70S トラックに、Macro を動かす照明クリップを置いておくと、曲に合わせて照明が切り替わります。"],
+    };
+  }
+  for (let i = 0; i < 5; i++) C[`sl${i}`] = { kaidan: [SL[i][0], "drive", `SCENE LAUNCH ${i + 1}：${SL[i][1]}`, SL[i][2], i === 1 ? "緑の点灯 = 語っている最中。" : null], live: [`▶${i + 1}`, "live", `SCENE LAUNCH ${i + 1}`, "Live のシーン（横 1 行）を起動します。"] };
+  for (let i = 0; i < 8; i++) C[`cs${i}`] = { kaidan: ["■", "drive", `CLIP STOP ${i + 1}`, "その列の話が流れていれば止めます。", "点灯 = この列の話を流している。"], live: ["■", "live", `CLIP STOP ${i + 1}`, "Live のその列のクリップを止めます。"] };
+  C.stopall = { kaidan: ["STOP ALL", "light", "STOP ALL CLIPS：ブラックアウト", "LM70S を真っ暗にします。語りは続きます。もう一度押すと戻ります。", "点灯 = ブラックアウト中。"], live: ["STOP ALL", "live", "STOP ALL CLIPS", "Live の全クリップを止めます。"] };
+  for (let i = 0; i < 8; i++) {
+    const k = i < 6 ? [MOODS[i + 1][0].replace("青白い", "").replace("のゆらぎ", "").replace("赤い", "").replace("の緑", ""), "light", `TRACK SELECT ${i + 1}：${MOODS[i + 1][0]}`, `照明ムードを「${MOODS[i + 1][0]}」にします。レーザーを連動していれば色も変わります。`, "点灯 = いまのムード。"]
+      : i === 6 ? ["ムード?", "light", "TRACK SELECT 7：ムードのサイコロ", "照明ムードのサイコロを振ります（1〜6 が回って止まる）。"] : ["自動", "light", "TRACK SELECT 8：話に合わせる", "照明ムードを、話ごとの決まったムードに戻します。", "点灯 = 話に合わせている。"];
+    C[`ts${i}`] = { kaidan: k, live: [`${i + 1}`, "live", `TRACK SELECT ${i + 1}`, "Live のトラックを選びます。LM70S トラックを選ぶと、右のノブが照明を動かします。"] };
+  }
+  C.master = { kaidan: ["MASTER", "switch", "MASTER（SHIFT と一緒に）", "SHIFT を押しながら押すと、Live 側に戻ります。", "点灯 = 怪談サイコロ側。"], live: ["MASTER", "switch", "MASTER（SHIFT と一緒に）", "SHIFT を押しながら押すと、怪談サイコロ側に切り替わります。単独で押すと Live のマスタートラックを選びます。"] };
+  for (let i = 0; i < 8; i++) both(`act${i}`, [`${i + 1}`, "live", `ACTIVATOR ${i + 1}`, "Live のトラックのオン / オフ（ミュート）。怪談サイコロでは使いません。"]);
+  for (let i = 0; i < 8; i++) {
+    C[`solo${i}`] = {
+      kaidan: i === 0 ? ["DEMO", "switch", "SOLO 1：ワンタップデモ", "約 85 秒で全部の機能を順に見せます。もう一度押すと止まります。", "点灯 = 押せる。点滅 = デモ中。"]
+        : [LASER[i][0], "laser", `SOLO ${i + 1}：${LASER[i][1]}`, LASER[i][2], i === 1 ? "点灯 = 出力中。" : i <= 5 ? "点灯 = いまの図形。" : i === 6 ? "点灯 = 連動 ON。" : null],
+      live: ["S", "live", `SOLO ${i + 1}`, "Live のトラックのソロ。"],
+    };
+  }
+  for (let i = 0; i < 8; i++) both(`arm${i}`, ["●", "live", `REC ARM ${i + 1}`, "Live の録音待機。怪談サイコロでは使いません。"]);
+  for (let i = 0; i < 8; i++) C[`fd${i}`] = { kaidan: ["", FADERS[i][0], `トラックフェーダー ${i + 1}：${FADERS[i][1]}`, FADERS[i][2]], live: ["", "live", `トラックフェーダー ${i + 1}`, "Live のトラック音量。LM70S トラックの列のフェーダーは、照明全体の明るさになります。"] };
+  C.mfd = { kaidan: ["", "light", "マスターフェーダー：LM70S の明るさ", "LM70S 全体の明るさ（/lm70s/master）。"], live: ["", "live", "マスターフェーダー", "Live のマスター音量。"] };
+  C.xfd = { kaidan: ["わらわら", "laser", "クロスフェーダー：わらわら度", "赤い手形の数を 1〜8 体で変えます。右へ倒すほど多くなります。"], live: ["X-FADE", "live", "クロスフェーダー", "Live のクロスフェーダー。"] };
+  for (let i = 0; i < 8; i++) both(`dk${i}`, [DK[i], "light", `DEVICE CONTROL ノブ ${i + 1}：${DK_LONG[i]}`, `いつも Live に届き、LM70S トラックの Macro ${i + 1} を回して照明を手で動かします。怪談サイコロ側でも使えます。BANK → で Macro 9〜12（速度・内蔵カラー・カラー速度・内蔵プログラム）。`]);
+  both("devlock", ["DEV.LOCK", "light", "DEV. LOCK", "押しておくと、Live で他のトラックを選んでもノブが LM70S のままになります。"]);
+  both("bank", ["BANK ▶", "light", "DEVICE BANK ← / →", "ノブの割り当てを Macro 1〜8 ⇔ 9〜12 で切り替えます。"]);
+  both("shift", ["SHIFT", "switch", "SHIFT", "押したまま MASTER を押すと、Live 側 ⇔ 怪談サイコロ側を切り替えます。"]);
+  both("other", ["PLAY · REC · TAP…", "live", "そのほかのボタン", "再生・録音・タップテンポ・ナッジなどは Live のままです。"]);
+
+  const RECIPES = [
+    { k: "story", t: "怪談を始める", d: "SHIFT + MASTER のあと、話の列の一番上を押す", mode: "kaidan", steps: [[["shift", "master"], "SHIFT を押したまま MASTER（点灯したら怪談サイコロ側）"], [["pad05"], "聞きたい話の列の一番上（導入）を押す"], [["sl0"], "迷ったら SCENE LAUNCH 1 でサイコロ"]] },
+    { k: "drive", t: "山場へ飛ぶ・進める", d: "4 段目が怪異。ボタンで次・前へ", mode: "kaidan", steps: [[["pad35"], "4 段目（怪異）を押すと、山場の段から流れる"], [["sl2"], "SCENE LAUNCH 3 で次の段へ"], [["sl4"], "SCENE LAUNCH 5 で前の段へ"], [["sl1"], "SCENE LAUNCH 2 で一時停止 / 再開"]] },
+    { k: "drive", t: "怖がらせる", d: "ドン！とブラックアウト", mode: "kaidan", steps: [[["fd5"], "フェーダー 6 で驚かしの強さを決める"], [["sl3"], "SCENE LAUNCH 4 で「ドン！」"], [["stopall"], "STOP ALL CLIPS で真っ暗に（もう一度で戻る）"]] },
+    { k: "light", t: "雰囲気を変える", d: "照明ムードと、環境音・心音・ゆらぎ", mode: "kaidan", steps: [[["ts1"], "TRACK SELECT 1〜6 でムード（例：2 = 蝋燭）"], [["fd1", "fd2"], "フェーダー 2・3 で環境音と心音"], [["fd4"], "フェーダー 5 でゆらぎの強さ"], [["ts7"], "TRACK SELECT 8 で話のムードに戻す"]] },
+    { k: "light", t: "ライトを手で動かす", d: "右のノブはいつでも LM70S", mode: "kaidan", steps: [[["dk0", "dk1"], "ノブ 1・2 でパン・チルト（Live の LM70S トラックを選んでおく）"], [["dk2", "dk4", "dk5", "dk6", "dk7"], "ノブ 3 で明るさ、5〜8 で色"], [["devlock"], "DEV. LOCK で、他のトラックを選んでもノブを照明に固定"]] },
+    { k: "laser", t: "レーザーを使う", d: "SOLO 2〜8・フェーダー 7/8・クロスフェーダー", mode: "kaidan", steps: [[["solo1"], "SOLO 2 で開始（実機は LaserCube Local の画面で許可済みのとき）"], [["solo5"], "SOLO 3〜6 で図形（6 = 赤い手形）"], [["fd6", "fd7"], "フェーダー 7・8 で明るさと大きさ"], [["xfd"], "クロスフェーダーで手の数"], [["solo6"], "SOLO 7 で怪談に連動"]] },
+    { k: "switch", t: "全部見せる", d: "SOLO 1 のワンタップデモ（約 85 秒）", mode: "kaidan", steps: [[["solo0"], "SOLO 1 を押す（点滅中はデモ中、もう一度で止まる）"]] },
+    { k: "switch", t: "Live に戻す", d: "SHIFT + MASTER をもう一度", mode: "live", steps: [[["shift", "master"], "SHIFT を押したまま MASTER（消灯したら Live 側）"], [["pad00"], "パッドは Live のクリップに戻る"]] },
+  ];
+
+  const LEDS = [
+    [`linear-gradient(90deg, #5078FF, #FF6E0A, #FF2A2A, #28E56E)`, "", "パッドの色", "その話の照明ムード。並んだ 8 色で、どの話がどんな光かが分かります。"],
+    ["#FF6E0A", "blink", "パッドの点滅", "いま語っている段。止めると点滅も止まります。"],
+    ["#F6A033", "", "MASTER 点灯", "怪談サイコロ側。消えていれば Live 側。"],
+    ["#F6A033", "blink", "SOLO 1 点滅", "デモ中。点灯（点滅なし）はデモを押せる状態。"],
+    ["#22D66A", "", "SCENE LAUNCH 2 が緑", "語っている最中。暗い緑は止まっている。"],
+    ["#F6A033", "", "SOLO 2 点灯", "レーザー出力中（LaserCube Local の状態を読んで点けています）。"],
+    ["#F6A033", "", "STOP ALL CLIPS 点灯", "ブラックアウト中。"],
+  ];
+
+  const DEMO = [[0, "story", "話のサイコロが回り、「押入れの向こう」の導入から語り始める"], [12, "story", "パッドで情景の段へ切り替え"], [16, "light", "ムードのサイコロ → 蝋燭のゆらぎ"],
+                [24, "sound", "積み上げの段。環境音・心音・ゆらぎを 8 秒かけて強める"], [34, "drive", "山場の手前へ飛び、自動でストロボ + ドン"], [45, "light", "稲光のムード"], [50, "drive", "手動の「ドン！」"],
+                [54, "light", "ブラックアウト（57 秒で戻る）"], [58, "story", "結末の段。ムードを話に戻し、音を弱める"], [70, "drive", "一時停止 → 72.5 秒で再開"], [80, "sound", "語りをフェードアウトして終了（フェーダーとムードは元に戻る）"]];
+
+  /* ---------- state ---------- */
+  let mode = "kaidan", zone = null, sel = null, recipe = null;
+
+  /* ---------- device ---------- */
+  function ctl(id, cls = "") { return `<button type="button" class="ctl ${cls}" data-id="${id}"></button>`; }
+  function buildDevice() {
+    let m = "";
+    m += `<span class="rowlab">TRACK CONTROL</span>`;
+    for (let i = 0; i < 8; i++) m += ctl(`tk${i}`, "knob");
+    m += `<span></span>`;
+    m += `<span class="rowlab">CLIP LAUNCH ・ SCENE LAUNCH</span>`;
+    for (let r = 0; r < 5; r++) { for (let c = 0; c < 8; c++) m += ctl(`pad${r}${c}`, "pad"); m += ctl(`sl${r}`); }
+    for (let i = 0; i < 8; i++) m += ctl(`cs${i}`);
+    m += ctl("stopall");
+    for (let i = 0; i < 8; i++) m += ctl(`ts${i}`);
+    m += ctl("master");
+    for (const row of ["act", "solo", "arm"]) { for (let i = 0; i < 8; i++) m += ctl(`${row}${i}`); m += `<span class="cap">${row === "act" ? "ACTIVATOR" : row === "solo" ? "SOLO" : "REC ARM"}</span>`; }
+    for (let i = 0; i < 8; i++) m += ctl(`fd${i}`, "fader");
+    m += ctl("mfd", "fader");
+    for (let i = 0; i < 8; i++) m += `<span class="cap" id="fcap${i}"></span>`;
+    m += `<span class="cap">MASTER</span>`;
+    let s = `<span class="cap left">DEVICE CONTROL</span><div class="knobs4">`;
+    for (let i = 0; i < 8; i++) s += ctl(`dk${i}`, "knob");
+    s += `</div><div class="btns">${ctl("bank")}${ctl("devlock")}</div>${ctl("shift")}${ctl("other")}<span class="cap left" style="margin-top:auto">CROSSFADER</span>${ctl("xfd", "xfader")}`;
+    $("#dev").innerHTML = `<div class="main">${m}</div><div class="side">${s}</div>`;
+  }
+
+  function spec(id) { return C[id][mode]; }
+  function renderDevice() {
+    $$("#dev .ctl").forEach(el => {
+      const [label, z, , , , color] = spec(el.dataset.id);
+      if (!el.classList.contains("fader")) el.textContent = label;
+      el.style.setProperty("--zc", ZONES[z][1]);
+      if (el.classList.contains("pad")) el.style.background = mode === "kaidan" ? color : "var(--device-2)";
+      if (el.classList.contains("pad")) el.style.color = mode === "kaidan" ? "#0D0E13" : "var(--device-ink)";
+      el.classList.toggle("on", zone === null || z === zone);
+      el.setAttribute("aria-label", spec(el.dataset.id)[2]);
+    });
+    $("#dev").classList.toggle("filtering", zone !== null);
+    for (let i = 0; i < 8; i++) $("#fcap" + i).textContent = mode === "kaidan" ? FADERS[i][1] : `${i + 1}`;
+    const lit = mode === "kaidan" ? ["master", "solo0", "ts7"] : [];
+    $$("#dev .ctl").forEach(el => el.classList.toggle("lit", lit.includes(el.dataset.id)));
+  }
+
+  /* ---------- panel ---------- */
+  function showControl(id) {
+    sel = id;
+    $$("#dev .ctl.sel").forEach(e => e.classList.remove("sel"));
+    const el = $(`#dev .ctl[data-id="${id}"]`); if (el) el.classList.add("sel");
+    const [, z, title, desc, led] = spec(id);
+    $("#panel").innerHTML = `<span class="z" style="--c:${ZONES[z][1]}"><i></i>${esc(ZONES[z][0])}</span><h3>${esc(title)}</h3><p>${esc(desc)}</p>${led ? `<p class="led">${esc(led)}</p>` : ""}<p class="hint">${mode === "kaidan" ? "いまは怪談サイコロ側の割り当てです。" : "いまは Live 側の割り当てです。"}</p>`;
+  }
+  function showRecipe(r) {
+    $("#panel").innerHTML = `<span class="z" style="--c:${ZONES[r.k][1]}"><i></i>${esc(ZONES[r.k][0])}</span><h3>${esc(r.t)}</h3><ol>${r.steps.map(s => `<li>${esc(s[1])}</li>`).join("")}</ol><p class="hint">地図の番号の順に押します。ほかのボタンを押すと説明に戻ります。</p>`;
+  }
+  function idle() {
+    $("#panel").innerHTML = `<span class="z" style="--c:var(--accent)"><i></i>使い方</span><h3>ボタンを押してみてください</h3><p>${mode === "kaidan" ? "パッドの 8 列が 8 つの話、右端の縦 5 個が語りの進行、下の SOLO 列がデモとレーザーです。" : "Live 側では、パッドやフェーダーは Live の操作です。右のノブはいつでも照明（LM70S）を動かします。"}</p><p class="hint">上の色の札で、役割ごとに絞り込めます。</p>`;
+  }
+  function clearSteps() { $$("#dev .ctl[data-step]").forEach(e => e.removeAttribute("data-step")); }
+
+  /* ---------- chips, modes, recipes ---------- */
+  $("#chips").innerHTML = Object.entries(ZONES).map(([k, [name, c]]) => `<button type="button" class="chip" data-zone="${k}" aria-pressed="false" style="--c:${c}"><i></i>${esc(name)}</button>`).join("");
+  $("#chips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    zone = zone === b.dataset.zone ? null : b.dataset.zone;
+    $$("#chips .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.zone === zone)));
+    renderDevice();
+  });
+  function setMode(m) {
+    mode = m;
+    $$(".mode").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+    renderDevice();
+  }
+  $$(".mode").forEach(b => b.addEventListener("click", () => { setMode(b.dataset.mode); clearSteps(); recipe = null; markRecipes(); sel ? showControl(sel) : idle(); }));
+  $("#dev").addEventListener("click", e => {
+    const el = e.target.closest(".ctl"); if (!el) return;
+    if (recipe !== null) { recipe = null; clearSteps(); markRecipes(); }
+    showControl(el.dataset.id);
+  });
+
+  $("#recipe-list").innerHTML = RECIPES.map((r, i) => `<button type="button" class="recipe" data-i="${i}" aria-pressed="false" style="--c:${ZONES[r.k][1]}"><span class="k">${esc(ZONES[r.k][0])}</span><b>${esc(r.t)}</b><span>${esc(r.d)}</span></button>`).join("");
+  function markRecipes() { $$(".recipe").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.i) === recipe))); }
+  $("#recipe-list").addEventListener("click", e => {
+    const b = e.target.closest(".recipe"); if (!b) return;
+    recipe = Number(b.dataset.i);
+    const r = RECIPES[recipe];
+    zone = null; $$("#chips .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+    setMode(r.mode); clearSteps();
+    $$("#dev .ctl.sel").forEach(x => x.classList.remove("sel"));
+    r.steps.forEach((s, n) => s[0].forEach(id => { const el = $(`#dev .ctl[data-id="${id}"]`); if (el) el.dataset.step = n + 1; }));
+    markRecipes(); showRecipe(r);
+    $("#map").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  });
+
+  /* ---------- stories ---------- */
+  $("#story-list").innerHTML = STORIES.map(([t, m, len], i) => `<button type="button" class="story" data-i="${i}" aria-pressed="false" style="--mc:${MOODS[m][1]}"><span class="n">${i + 1} 列目</span><b>${esc(t)}</b><span class="mood"><i></i>${esc(MOODS[m][0])}</span><span class="len"><i style="width:${(len / 12.5 * 100).toFixed(1)}%"></i></span><span class="min">${len.toFixed(1)} 分</span></button>`).join("");
+  $("#story-list").addEventListener("click", e => {
+    const b = e.target.closest(".story"); if (!b) return;
+    const c = Number(b.dataset.i);
+    $$(".story").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    zone = null; setMode("kaidan"); recipe = null; markRecipes(); clearSteps();
+    for (let r = 0; r < 5; r++) $(`#dev .ctl[data-id="pad${r}${c}"]`).dataset.step = r + 1;
+    showControl(`pad0${c}`);
+  });
+
+  /* ---------- chart (drawn to scale) ---------- */
+  (function chart() {
+    const dim = [40, 28, 18, 18, 8], bpm = [64, 80, 100, 120, 76];
+    const X0 = 56, X1 = 470, Y0 = 210, Y1 = 30, W = (X1 - X0) / 5;
+    const yL = v => Y0 - (v / 100) * (Y0 - Y1);              // light % 0-100
+    const yB = v => Y0 - ((v - 40) / (140 - 40)) * (Y0 - Y1);  // bpm 40-140
+    let s = "";
+    for (const v of [0, 25, 50, 75, 100]) s += `<line x1="${X0}" x2="${X1}" y1="${yL(v)}" y2="${yL(v)}" stroke="#2B2E3D" stroke-width="1"/><text x="${X0 - 8}" y="${yL(v) + 4}" text-anchor="end" fill="#9C9AA6" font-size="10" font-family="IBM Plex Mono, monospace">${v}%</text>`;
+    for (const v of [40, 80, 120]) s += `<text x="${X1 + 8}" y="${yB(v) + 4}" fill="#47C9B0" font-size="10" font-family="IBM Plex Mono, monospace">${v}</text>`;
+    dim.forEach((v, i) => {
+      const x = X0 + W * i + W * 0.22, w = W * 0.56;
+      s += `<rect x="${x}" y="${yL(v)}" width="${w}" height="${Y0 - yL(v)}" rx="3" fill="#7FA2FF" opacity=".85"/>`;
+      s += `<text x="${x + w / 2}" y="${yL(v) - 6}" text-anchor="middle" fill="#ECE7DD" font-size="11" font-family="IBM Plex Mono, monospace">${v}</text>`;
+      s += `<text x="${X0 + W * i + W / 2}" y="${Y0 + 18}" text-anchor="middle" fill="#ECE7DD" font-size="12" font-family="Zen Kaku Gothic New, sans-serif">${PARTS[i]}</text>`;
+    });
+    const sx = X0 + W * 3 + W * 0.3;  // left of the heartbeat point so its label stays clear
+    s += `<line x1="${sx}" x2="${sx}" y1="${yL(18)}" y2="${yL(100)}" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3 3"/><circle cx="${sx}" cy="${yL(100)}" r="5" fill="#FFFFFF"/><text x="${sx + 8}" y="${yL(100) + 4}" fill="#FFFFFF" font-size="10" font-family="Zen Kaku Gothic New, sans-serif">ストロボ</text>`;
+    const pts = bpm.map((v, i) => `${X0 + W * i + W / 2},${yB(v)}`).join(" ");
+    s += `<polyline points="${pts}" fill="none" stroke="#47C9B0" stroke-width="2.5" stroke-linejoin="round"/>`;
+    bpm.forEach((v, i) => { const x = X0 + W * i + W / 2; s += `<circle cx="${x}" cy="${yB(v)}" r="4" fill="#0D0E13" stroke="#47C9B0" stroke-width="2"/><text x="${x}" y="${yB(v) - 9}" text-anchor="middle" fill="#47C9B0" font-size="10" font-family="IBM Plex Mono, monospace">${v}</text>`; });
+    s += `<text x="${X1 + 8}" y="${Y1 - 10}" fill="#47C9B0" font-size="10" font-family="Zen Kaku Gothic New, sans-serif">拍/分</text>`;
+    $("#chart").innerHTML = s;
+  })();
+
+  /* ---------- LEDs ---------- */
+  $("#led-list").innerHTML = LEDS.map(([bg, cls, t, d]) => `<div class="ledrow"><span class="sw ${cls}" style="background:${bg}"></span><div><b>${esc(t)}</b><span>${esc(d)}</span></div></div>`).join("");
+
+  /* ---------- demo timeline ---------- */
+  const TL_MAX = 85;
+  let tl = `<div class="bar"></div>`;
+  DEMO.forEach(([t, z], i) => { tl += `<button type="button" class="ev" data-i="${i}" aria-pressed="false" style="left:${(t / TL_MAX * 100).toFixed(2)}%; --c:${ZONES[z][1]}" aria-label="${t} 秒">${t}</button>`; });
+  for (const t of [0, 20, 40, 60, 80]) tl += `<span class="tick" style="left:${(t / TL_MAX * 100).toFixed(2)}%">${t}s</span>`;
+  $("#timeline").innerHTML = tl;
+  function showEvent(i) {
+    $$("#timeline .ev").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.i) === i)));
+    const [t, z, text] = DEMO[i];
+    $("#evtext").innerHTML = `<b>${t} 秒</b>${esc(text)}`;
+  }
+  $("#timeline").addEventListener("click", e => { const b = e.target.closest(".ev"); if (b) showEvent(Number(b.dataset.i)); });
+
+  buildDevice();
+  renderDevice();
+  idle();
+  showEvent(4);
+})();
+</script>

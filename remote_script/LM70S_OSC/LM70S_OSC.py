@@ -1,7 +1,8 @@
 """Ableton Live control surface script: Rack macros on the "LM70S" track -> OSC.
 
-Runs in its own Control Surface slot (Input/Output: None) next to the APC40 mkII
-script, so the APC40 keeps clip launching while its Device knobs drive the macros.
+Runs in its own Control Surface slot next to the APC40 mkII script, so the APC40 keeps
+clip launching while its Device knobs drive the macros. With an MPK mini mk2 as this
+slot's Input, its knobs, pads and joystick drive the same macros (see midi_input.py).
 """
 
 import socket
@@ -9,6 +10,7 @@ import socket
 from _Framework.ControlSurface import ControlSurface
 
 from . import config
+from .midi_input import MidiInput
 from .osc import osc_message
 
 KNOWN_PARAMS = set(config.MACROS.values())
@@ -39,9 +41,11 @@ class LM70S_OSC(ControlSurface):
         self._target = (config.OSC_HOST, config.OSC_PORT)
         self._observers = []  # (subject, callback) value listeners
         self._senders = []
+        self._params = {}  # osc name -> bound parameter, for the MIDI controller
         self._signature = None
         self._ticks = 0
         self._last_report = None
+        self._midi = MidiInput(self, lambda: self._params)
         try:
             self._rebuild()
         except Exception as e:
@@ -52,8 +56,26 @@ class LM70S_OSC(ControlSurface):
         self._sock.close()
         ControlSurface.disconnect(self)
 
+    def build_midi_map(self, midi_map_handle):
+        ControlSurface.build_midi_map(self, midi_map_handle)
+        if getattr(self, "_midi", None):  # Live may build the map before __init__ finishes
+            self._midi.forward(self._c_instance.handle(), midi_map_handle)
+
+    def receive_midi(self, midi_bytes):
+        try:
+            if getattr(self, "_midi", None) and self._midi.receive(midi_bytes):
+                return
+        except Exception as e:
+            self.log_message("LM70S_OSC: MIDI %r failed: %r" % (midi_bytes, e))
+            return
+        ControlSurface.receive_midi(self, midi_bytes)
+
     def update_display(self):
         ControlSurface.update_display(self)
+        try:
+            self._midi.tick()
+        except Exception as e:
+            self.log_message("LM70S_OSC: joystick failed: %r" % (e,))
         self._ticks += 1
         try:
             if self._ticks % config.STRUCTURE_CHECK_TICKS == 0 and self._scan()[0] != self._signature:
@@ -103,6 +125,7 @@ class LM70S_OSC(ControlSurface):
             return
         for name, param, convert in bindings:
             self._bind(name, param, convert)
+        self._params = dict((name, param) for name, param, convert in bindings if convert is _normalized)
         self._report("track '%s': %s -> %s:%d" % (
             track.name, ", ".join(name for name, _, _ in bindings) or "no Rack macros",
             config.OSC_HOST, config.OSC_PORT))
@@ -127,6 +150,7 @@ class LM70S_OSC(ControlSurface):
                 pass  # the device may already be deleted
         self._observers = []
         self._senders = []
+        self._params = {}
 
     def _send_all(self):
         for send in self._senders:

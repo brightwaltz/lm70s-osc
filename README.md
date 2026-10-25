@@ -4,6 +4,7 @@ APC40 mkII のノブと Live のクリップで Betopper LM70S（7×8W RGBW ミ�
 Live 12 **Lite**（Max for Live なし）で動くように、Live の中では自作のリモートスクリプトが OSC を送り、外の Python ブリッジがそれを DMX に変換する。
 Live を使わずに APC40 から直接 OSC を出すモード（[8. Ableton なしモード](#8-ableton-なしモードapc40--osc-直結)）と、DMX 側を別マシンで動かす構成（[9. 別マシン構成](#9-別マシン構成サーバーで-dmx-を出す)）もある。
 DMX を別の人のブリッジ（例: 先方 Mac の UDP 9004）が受け持つときは [10. 別のブリッジへ中継](#10-別のブリッジへ中継先方の-mac-など) を使う。
+APC40 のノブは Live、8×5 パッドとフェーダーは別のマシンのアプリ、と分けて同時に使うときは [11. APC40 を Live と別のアプリで分け合う](#11-apc40-を-live-と別のアプリで分け合うapc_proxypy) を使う。
 
 ```
 APC40 mkII ──USB──▶ Ableton Live 12 Lite
@@ -224,6 +225,81 @@ APC40 mkII ─▶ Live + LM70S_OSC または apc2osc.py ─OSC 127.0.0.1:9000─
 
 UDP は届いたかどうかが送信側では分からない。相手側の受信表示（ステータスページなど）で確かめる。
 
+別のアプリ（怪談サイコロなど）も同じライトに照明キューを送るときは `--changes-only` を付ける。Live のスクリプトは 1 秒ごとに全値を送り直すが、値が変わったときだけ転送するので、ノブを回したとき以外は相手のキューを上書きしない。
+
+## 11. APC40 を Live と別のアプリで分け合う（apc_proxy.py）
+
+APC40 を 1 台のまま、ノブは Live（照明）、8×5 パッドとフェーダーは別のマシンのアプリ（例: PC-A の怪談サイコロ）で同時に使う構成。`tools/apc_proxy.py` が APC40 と Live の間に入り、Live には仮想 MIDI ポート `APC40 proxy` を見せる。
+
+```
+APC40 mkII ─USB─▶ tools/apc_proxy.py ─仮想ポート「APC40 proxy」─▶ Live（APC40 mkII スクリプト、LM70S_OSC）
+                        │ OSC/UDP（LAN）: 生の MIDI を送り、LED の MIDI を受け取る
+                        ▼
+                  別のマシンのアプリ（tools/apc_remote.py の RemoteAPC40 を使う）
+```
+
+**SHIFT + MASTER** で、次の操作の行き先を Live ⇔ 別のアプリで切り替える。別のアプリ側にしている間は MASTER ボタンが点灯する。
+
+| 行き先が切り替わる | いつも Live |
+|---|---|
+| クリップパッド 8×5、CLIP STOP、SOLO、TRACK SELECT、MASTER、STOP ALL CLIPS、SCENE LAUNCH 1-5、トラックフェーダー、マスターフェーダー、クロスフェーダー | DEVICE CONTROL と TRACK CONTROL のノブ、トランスポート、BANK、DEVICE のボタンなど、そのほか全部（SHIFT は両方へ） |
+
+切り替えると、そのとき持ち主になった側の LED に描き直す（Live 側の LED は覚えておいて戻す）。
+
+起動の順番:
+
+```bash
+.venv/bin/python tools/apc_proxy.py
+```
+
+1. 先に `apc_proxy.py` を起動する（実物の APC40 を開いて、仮想ポート `APC40 proxy` を作る）
+2. Live の **Settings > Link, Tempo & MIDI** で、Control Surface 1（APC40 mkII）の Input と Output を **`APC40 proxy`** に変える
+3. 同じ画面の MIDI Ports で、実物の `APC40 mkII` の入力と出力の Track と Remote をオフにする（Live が直接さわらないようにする）
+4. 別のマシンでアプリを起動すると、`/apc40/hello` で場所を知らせてくる。SHIFT + MASTER でそちらに切り替わる
+
+`apc_proxy.py` を止めると Live からも APC40 が見えなくなる。元に戻すときは、Control Surface 1 の Input と Output を `APC40 mkII` に戻す。
+
+別のマシン側の使い方（`tools/apc_remote.py`）:
+
+```python
+from apc_remote import RemoteAPC40
+apc = RemoteAPC40("<apc_proxy.py の Mac の IP>")   # 9110 で待ち受け、9111 の proxy に送る
+controller = Controller(cfg, send_osc, apc.send)   # apc2osc.py と同じ作りの Controller
+apc.callback = controller.handle                   # APC40 の入力が mido.Message で届く
+apc.on_attach = controller.refresh                 # 切り替わったら LED を全部描き直す
+apc.connect()
+```
+
+- 初期化の sysex や device id の問い合わせは送らない（proxy と Live が済ませる）
+- 受け取れるのは表の左側の操作と SHIFT だけ。ノブの LED リングなど、それ以外への LED は無視される
+- 動作確認だけなら `python tools/apc_remote.py --proxy <IP>`（押したパッドが光る）
+
+| ポート | 向き | 内容 |
+|---|---|---|
+| UDP 9111（proxy の Mac） | アプリ → proxy | `/apc40/hello i 待ち受けポート`、`/apc40/midi b LED の MIDI` |
+| UDP 9110（アプリのマシン） | proxy → アプリ | `/apc40/midi b APC40 の入力`、`/apc40/attach`、`/apc40/detach` |
+
+## 12. AKAI MPK mini mk2 も使う
+
+MPK mini mk2 のノブ・パッド・ジョイスティックで、LM70S トラックの Rack の Macro を動かす。`LM70S_OSC` スクリプトが MPK を直接受けて Macro の値を変えるので、APC40 のノブ（LED リング）も Live のオートメーションも同じ値のまま揃う。
+
+1. `./install_remote_script.sh` を実行してから Live を再起動する（スクリプトの変更は再起動しないと読み込まれない）
+2. **Settings > Link, Tempo & MIDI** の Control Surface 2（`LM70S_OSC`）で、Input を **`MPKmini2`** にする（Output は None のまま）
+3. ステータスバーに `MPK pad ...` や `MPK pan knob picks up at ...` が出れば受け取れている
+
+| 操作 | 内容 |
+|---|---|
+| K1（CC 1） | Strobe。ジョイスティックの上下も同じ CC 1 なので、スティックを倒している間だけストロボが光る |
+| K2-K4 | Pan / Tilt / Dimmer |
+| K5-K8 | Red / Green / Blue / White |
+| ジョイスティック左右 | Pan を少しずつ動かす（倒し切ると 1 秒で全範囲の 1/4、離すと止まる） |
+| パッド Bank A | Red / Orange / Yellow / Green / Cyan / Blue / Purple / White（ノート 44-51） |
+| パッド Bank B（PAD BANK ボタン） | Center / Left / Right / Up / Down / Warm wash / Cool wash / Dark（ノート 32-39） |
+
+- K1 以外のノブは、ノブの位置が今の値を通り過ぎてから効く。触った瞬間に値が飛ばないためで、ステータスバーの `picks up at <値>` が合わせる目安
+- 鍵盤の音は今まで通り Live のトラックに届く。ただし工場出荷設定ではパッドと鍵盤が同じ ch 1 で、鍵盤の C3-D#3（ノート 48-51）がパッド 5-8 と同じノートになる。鍵盤で弾くときは OCTAVE ボタンでずらす
+- ノートや CC の番号は MPK mini mk2 の Program 1（工場出荷設定）で実測した値。変えるときは `remote_script/LM70S_OSC/config.py` の `MIDI_KNOBS`・`MIDI_PADS`・`JOYSTICK_PAN_SPEED` を書き換え、`./install_remote_script.sh` を再実行して Live を再起動する
+
 ## OSC アドレス（TouchOSC などから直接送る場合）
 
 float は 0.0-1.0 の正規化値、int は DMX の生値（0-255）として扱う。
@@ -246,6 +322,13 @@ float は 0.0-1.0 の正規化値、int は DMX の生値（0-255）として扱
 ```
 
 2 台目の本体アドレスは 015 にする。Live から全台を同時に動かすなら `config.py` の `OSC_PREFIX` を `"/all"` にして `./install_remote_script.sh` を再実行する。
+
+同じ名前を 2 回指定すると、その名前の OSC で両方が一緒に動く（`/lm70s/...` で 2 台とも動かしたいとき。Live の設定はそのままでよい）:
+
+```bash
+.venv/bin/python bridge/osc2dmx.py --output enttec-pro \
+  --fixture lm70s=1:14 --fixture lm70s=15:14
+```
 
 ## トラブルシューティング
 

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ドキドキ・メーター</title>
+<style>
+/* Served by soundnovel.py on the venue LAN, possibly offline: system fonts only, nothing loaded from outside. */
+:root {
+  color-scheme: dark;
+  --bg: #0b0a0c;
+  --panel: #151216;
+  --line: #2e262c;
+  --ink: #efe6dc;
+  --muted: #9b8f8a;
+  --blood: #c8102e;
+  --blood-hi: #ff3b4e;
+  --calm: #ffad4a;
+  --eerie: #6e8bff;
+  --fear: #a04cff;
+  --trap: #ffd400;
+  --win: #35e07a;
+  --serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  --sans: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 80% at 50% 0%, #1a1014 0%, var(--bg) 60%);
+  color: var(--ink); font-family: var(--sans);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: grid; grid-template-rows: auto 1fr auto; gap: 18px; overflow: hidden;
+}
+header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+header h1 { font-family: var(--serif); font-weight: 800; font-size: clamp(22px, 3.2vw, 40px); margin: 0; letter-spacing: .04em; }
+header .story { color: var(--muted); font-size: clamp(13px, 1.4vw, 18px); }
+header .right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+.pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font-size: clamp(12px, 1.2vw, 16px); background: var(--panel); }
+.pill.playing { border-color: var(--blood); color: var(--blood-hi); }
+.time { font-family: var(--mono); color: var(--muted); font-size: clamp(14px, 1.4vw, 20px); font-variant-numeric: tabular-nums; }
+
+main { display: grid; grid-template-columns: minmax(180px, 26vw) 1fr; gap: 24px; min-height: 0; }
+.tube-wrap { display: grid; grid-template-rows: auto 1fr auto; gap: 10px; justify-items: center; min-height: 0; }
+.tube-wrap .label { font-family: var(--serif); font-size: clamp(16px, 1.8vw, 24px); letter-spacing: .2em; }
+.tube { position: relative; width: min(100%, 220px); height: 100%; min-height: 200px; border: 3px solid #5a4a50; border-radius: 40px 40px 60px 60px;
+  background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.10) 30%, rgba(255,255,255,.02)); overflow: hidden; }
+.liquid { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; transition: height .35s ease-out;
+  background: linear-gradient(180deg, var(--blood-hi), var(--blood) 40%, #6e0616); }
+.liquid::before { content: ""; position: absolute; left: -10%; right: -10%; top: -10px; height: 20px; border-radius: 50%;
+  background: var(--blood-hi); opacity: .9; animation: slosh 3s ease-in-out infinite; }
+@keyframes slosh { 0%,100% { transform: translateX(-4%) scaleY(1); } 50% { transform: translateX(4%) scaleY(.7); } }
+.ticks { position: absolute; inset: 0; background: repeating-linear-gradient(180deg, transparent 0 calc(10% - 1px), rgba(255,255,255,.18) calc(10% - 1px) 10%); pointer-events: none; }
+.pct { font-family: var(--mono); font-size: clamp(40px, 6vw, 84px); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.pct small { font-size: .4em; color: var(--muted); }
+
+.right-col { display: grid; grid-template-rows: auto 1fr; gap: 16px; min-height: 0; min-width: 0; }
+.vitals { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
+.bpm { font-family: var(--mono); font-size: clamp(56px, 9vw, 140px); font-weight: 700; line-height: .9; color: var(--blood-hi); font-variant-numeric: tabular-nums; }
+.bpm .heart { display: inline-block; font-size: .5em; vertical-align: middle; margin-right: 10px; transform-origin: center; }
+.bpm .heart.beat { animation: beat .35s ease-out; }
+@keyframes beat { 0% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.unit { color: var(--muted); font-size: clamp(14px, 1.5vw, 20px); }
+.source { color: var(--muted); font-size: clamp(12px, 1.2vw, 16px); line-height: 1.6; }
+.chart { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; }
+.chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.legend { position: absolute; right: 12px; top: 10px; font-size: 12px; color: var(--muted); display: flex; gap: 14px; }
+.legend i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; min-width: 0; }
+.now { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.kind { font-size: 13px; padding: 2px 10px; border-radius: 6px; color: #111; font-weight: 700; }
+.now .title { font-family: var(--serif); font-size: clamp(18px, 2.2vw, 30px); font-weight: 800; }
+.subtitle { font-family: var(--serif); font-size: clamp(16px, 1.9vw, 26px); color: #d9cfc6; line-height: 1.6; min-height: 1.6em;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.progress { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--ink); transition: width .15s linear; }
+
+.banner { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .4s; }
+.banner.show { opacity: 1; }
+.banner .box { text-align: center; padding: 40px 60px; border-radius: 20px; background: rgba(0,0,0,.72); border: 2px solid currentColor; }
+.banner .big { font-family: var(--serif); font-weight: 800; font-size: clamp(44px, 9vw, 150px); letter-spacing: .06em; line-height: 1.1; }
+.banner .small { font-size: clamp(16px, 2vw, 28px); margin-top: 12px; color: var(--ink); }
+.banner.teller { color: var(--blood-hi); }
+.banner.survivor { color: var(--win); }
+.banner.comedy { color: var(--trap); }
+.banner.comedy .big { font-size: clamp(32px, 6vw, 96px); }
+.offline { position: fixed; left: 16px; bottom: 16px; font-size: 13px; color: var(--blood-hi); }
+
+@media (max-width: 720px) {
+  body { overflow: auto; }
+  main { grid-template-columns: 1fr; }
+  .tube { height: 260px; }
+  .chart { min-height: 180px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .liquid::before, .bpm .heart.beat { animation: none; }
+  .liquid, .progress > div { transition: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>二人弟切・脈</h1>
+  <span class="story" id="story">AI-Driven Bio-Soundnovel</span>
+  <div class="right"><span class="pill" id="phase">準備</span><span class="time" id="time">0:00</span></div>
+</header>
+<main>
+  <section class="tube-wrap" aria-label="ドキドキ・メーター">
+    <div class="label">ドキドキ・メーター</div>
+    <div class="tube"><div class="liquid" id="liquid"></div><div class="ticks"></div></div>
+    <div class="pct" id="pct">100<small>%</small></div>
+  </section>
+  <section class="right-col">
+    <div class="vitals">
+      <div class="bpm"><span class="heart" id="heart">♥</span><span id="bpm">--</span></div>
+      <div><div class="unit">bpm（サバイバーの心拍）</div><div class="source" id="source">平常心: --</div></div>
+    </div>
+    <div class="chart">
+      <canvas id="chart"></canvas>
+      <div class="legend"><span><i style="background:var(--blood-hi)"></i>心拍</span><span><i style="background:var(--ink)"></i>メーター</span></div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="now"><span class="kind" id="kind" hidden></span><span class="title" id="padtitle">テラーがパッドを押すと物語が始まります</span></div>
+  <div class="subtitle" id="subtitle"></div>
+  <div class="progress"><div id="progress"></div></div>
+</footer>
+<div class="banner" id="banner"><div class="box"><div class="big" id="bannerBig"></div><div class="small" id="bannerSmall"></div></div></div>
+<div class="offline" id="offline" hidden>soundnovel.py に接続できません</div>
+<script>
+const $ = id => document.getElementById(id);
+const KIND_COLORS = { calm: "var(--calm)", eerie: "var(--eerie)", fear: "var(--fear)", scare: "var(--blood-hi)", end: "#fff", trap: "var(--trap)" };
+const showText = !new URLSearchParams(location.search).has("notext");  // ?notext hides the subtitles
+let lastBeat = 0, state = null;
+
+function fmt(sec) { sec = Math.max(0, Math.floor(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+
+function draw() {
+  const canvas = $("chart"), box = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  canvas.width = box.width * dpr; canvas.height = box.height * dpr;
+  const g = canvas.getContext("2d"); g.scale(dpr, dpr);
+  const w = box.width, h = box.height, pad = 14;
+  g.clearRect(0, 0, w, h);
+  g.strokeStyle = "rgba(255,255,255,.06)"; g.lineWidth = 1;
+  for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(0, h * i / 4); g.lineTo(w, h * i / 4); g.stroke(); }
+  const hist = state && state.history || [];
+  if (hist.length < 2) return;
+  const t1 = hist[hist.length - 1][0], t0 = Math.max(0, t1 - 120);
+  const pts = hist.filter(p => p[0] >= t0);
+  const x = t => pad + (w - 2 * pad) * (t - t0) / Math.max(1, t1 - t0);
+  const hrs = pts.map(p => p[1]).filter(v => v > 0);
+  const lo = Math.min(55, ...hrs) - 5, hi = Math.max(130, ...hrs) + 5;
+  const yHr = v => h - pad - (h - 2 * pad) * (v - lo) / (hi - lo);
+  const yM = v => h - pad - (h - 2 * pad) * v;
+  if (state.baseline) {
+    g.setLineDash([4, 6]); g.strokeStyle = "rgba(255,59,78,.35)";
+    g.beginPath(); g.moveTo(pad, yHr(state.baseline)); g.lineTo(w - pad, yHr(state.baseline)); g.stroke(); g.setLineDash([]);
+  }
+  g.lineWidth = 2.5; g.strokeStyle = "#ff3b4e"; g.beginPath();
+  pts.forEach((p, i) => p[1] > 0 && (i ? g.lineTo(x(p[0]), yHr(p[1])) : g.moveTo(x(p[0]), yHr(p[1]))));
+  g.stroke();
+  g.lineWidth = 2; g.strokeStyle = "#efe6dc"; g.beginPath();
+  pts.forEach((p, i) => (i ? g.lineTo(x(p[0]), yM(p[2])) : g.moveTo(x(p[0]), yM(p[2]))));
+  g.stroke();
+}
+
+function render(s) {
+  state = s;
+  $("story").textContent = s.title;
+  $("phase").textContent = s.phase_name;
+  $("phase").className = "pill" + (s.phase === "playing" ? " playing" : "");
+  $("time").textContent = fmt(s.elapsed) + "　" + s.played + " / " + s.total;
+  const pct = Math.round(s.meter * 100);
+  $("liquid").style.height = pct + "%";
+  $("pct").innerHTML = pct + "<small>%</small>";
+  $("bpm").textContent = s.hr ? Math.round(s.hr) : "--";
+  $("source").textContent = (s.hr_source === "sensor" ? "センサー" : s.hr_source === "sim" ? "シミュレーション" : "心拍なし") +
+    "　平常心: " + (s.baseline ? Math.round(s.baseline) + " bpm" : s.phase === "calibrating" ? "測定中…" : "--");
+  if (s.hr && s.phase !== "ready") {
+    const now = performance.now();
+    if (now - lastBeat > 60000 / s.hr) {
+      lastBeat = now; const h = $("heart"); h.classList.remove("beat"); void h.offsetWidth; h.classList.add("beat");
+    }
+  }
+  const pad = s.pad;
+  $("kind").hidden = !pad;
+  if (pad) {
+    $("kind").textContent = pad.kind_name; $("kind").style.background = KIND_COLORS[pad.kind] || "#fff";
+    $("padtitle").textContent = pad.title;
+    $("subtitle").textContent = showText ? pad.text : "";
+    $("progress").style.width = (pad.progress == null ? 100 : pad.progress * 100) + "%";
+  }
+  const banner = $("banner");
+  if (s.phase === "teller" || s.phase === "survivor") {
+    banner.className = "banner show " + s.phase;
+    $("bannerBig").textContent = s.phase === "teller" ? "テラーの勝利" : "サバイバーの勝利";
+    $("bannerSmall").textContent = s.phase === "teller" ? "ドキドキ・メーターが尽きた（" + fmt(s.elapsed) + "）" : "最後まで耐え抜いた　残り " + pct + "%";
+  } else if (s.laughing) {
+    banner.className = "banner show comedy";
+    $("bannerBig").textContent = "……ん？";
+    $("bannerSmall").textContent = "切り貼りミスでホラーがコメディに。メーター回復中";
+  } else {
+    banner.className = "banner";
+  }
+  draw();
+}
+
+async function poll() {
+  try {
+    const r = await fetch("/state", { cache: "no-store" });
+    render(await r.json());
+    $("offline").hidden = true;
+  } catch (e) {
+    $("offline").hidden = false;
+  }
+  setTimeout(poll, 150);
+}
+window.addEventListener("resize", draw);
+poll();
+</script>
+</body>
+</html>

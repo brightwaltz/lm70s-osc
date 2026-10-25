@@ -34,7 +34,11 @@ def to_normalized(arg):
 
 class Bridge:
     def __init__(self, fixtures, verbose=False):
-        self.fixtures = {f.name: f for f in fixtures}
+        self.fixtures = {}  # unique key -> fixture
+        self.groups = {}  # OSC name -> fixtures; fixtures given the same name move together
+        for i, f in enumerate(fixtures, start=1):
+            self.fixtures[f.name if f.name not in self.fixtures else "%s#%d" % (f.name, i)] = f
+            self.groups.setdefault(f.name, []).append(f)
         self.verbose = verbose
         self.blackout = False
         self.raw = {}
@@ -63,8 +67,8 @@ class Bridge:
                 self.blackout = value > 0
             elif len(parts) == 2 and parts[0] == "dmx" and parts[1].isdigit() and 1 <= int(parts[1]) <= 512:
                 self.raw[int(parts[1])] = int(round(min(1.0, max(0.0, value)) * 255))
-            elif len(parts) == 2 and (parts[0] == "all" or parts[0] in self.fixtures):
-                targets = self.fixtures.values() if parts[0] == "all" else [self.fixtures[parts[0]]]
+            elif len(parts) == 2 and (parts[0] == "all" or parts[0] in self.groups):
+                targets = self.fixtures.values() if parts[0] == "all" else self.groups[parts[0]]
                 if not all([f.set(parts[1], value, now) for f in targets]):
                     self._warn(address, "unknown parameter")
             else:
@@ -145,7 +149,7 @@ def main():
     ap.add_argument("--artnet-host", default="255.255.255.255", help="Art-Net node IP (default broadcast)")
     ap.add_argument("--artnet-universe", type=int, default=0)
     ap.add_argument("--fixture", action="append", type=parse_fixture, metavar="NAME=ADDR[:MODE]",
-                    help="fixture definition, repeatable (default: lm70s=1:14)")
+                    help="fixture definition, repeatable; the same NAME twice moves both (default: lm70s=1:14)")
     ap.add_argument("--fps", type=float, default=40.0)
     ap.add_argument("--monitor", action="store_true", help="also print DMX values when using hardware output")
     ap.add_argument("--verbose", action="store_true", help="print every incoming OSC message")

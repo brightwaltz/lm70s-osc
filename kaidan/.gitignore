@@ -1,0 +1,8 @@
+# 大きいファイルと、用意してもらった音声から作ったものは公開リポジトリに入れない
+models/
+audio/
+transcripts/
+segments/
+out/
+stories.json
+novel.json

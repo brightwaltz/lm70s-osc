@@ -69,12 +69,18 @@ class Sender:
                 print("send failed: %s" % e, file=sys.stderr)
 
 
-def passthrough_handler(sender, renames):
+def passthrough_handler(sender, renames, changes_only=False):
+    last = {}
+
     def handle(address, *args):
         for old, new in renames:
             if address == old or address.startswith(old + "/"):
                 address = new + address[len(old):]
                 break
+        if changes_only:
+            if last.get(address) == args:
+                return  # e.g. Live's once-a-second resend: don't overwrite cues another app sent
+            last[address] = args
         sender.send(address, list(args))
 
     return handle
@@ -126,6 +132,8 @@ def main():
     ap.add_argument("--mode", choices=["passthrough", "channels"], default="passthrough")
     ap.add_argument("--rename", action="append", type=parse_rename, default=[], metavar="/OLD=/NEW",
                     help="passthrough: rewrite an address prefix, repeatable")
+    ap.add_argument("--changes-only", action="store_true",
+                    help="passthrough: forward a message only when its value changed (another app shares the lights)")
     ap.add_argument("--channel-address", default="/dmx/{ch}",
                     help="channels: address template, {ch} = 1-512, {ch0} = 0-511 (default /dmx/{ch})")
     ap.add_argument("--channel-value", choices=["int", "float"], default="int",
@@ -144,7 +152,7 @@ def main():
     worker = None
 
     if args.mode == "passthrough":
-        dispatcher.set_default_handler(passthrough_handler(sender, args.rename))
+        dispatcher.set_default_handler(passthrough_handler(sender, args.rename, args.changes_only))
     else:
         bridge = Bridge(args.fixture or [LM70S("lm70s", 1, 14)])
         dispatcher.set_default_handler(bridge.handle)

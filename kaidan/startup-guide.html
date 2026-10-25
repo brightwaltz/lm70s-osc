@@ -1,0 +1,617 @@
+<title>怪談サイコロ起動手順</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+/* Layout: one 980px column under a sticky bar; a settings strip drives every command; steps are a numbered runbook with "where" tags (T1/T2/T3/Live/APC40). */
+:root {
+  --bg: #ECEEF2;
+  --surface: #FFFFFF;
+  --surface-2: #F4F5F8;
+  --ink: #15181E;
+  --muted: #5A616D;
+  --line: #D4D8DF;
+  --accent: #B5570B;
+  --accent-soft: #F7E4D2;
+  --ok: #1D7549;
+  --warn: #9A5B00;
+  --term-bg: #16191F;
+  --term-ink: #E4E7EC;
+  --term-dim: #8C94A1;
+  --term-ok: #7FD39A;
+  --t1: #B5570B;
+  --t2: #0E7C86;
+  --t3: #6B4FBB;
+  --t4: #B4232F;
+  --tlive: #4B5563;
+  --tapc: #C2410C;
+  --device: #1C1E22;
+  --device-2: #2A2D33;
+  --device-ink: #CDD0D6;
+  --device-dim: #7A7F88;
+  --ring: #FF8A1F;
+  --live-bg: #2B2B2B;
+  --live-row: #353535;
+  --live-ink: #D9D9D9;
+  --live-on: #F2B544;
+  --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1217; --surface: #171B22; --surface-2: #1D222B; --ink: #E7E9ED; --muted: #9BA3AF; --line: #2C323C;
+    --accent: #F0A04B; --accent-soft: #3A2A18; --ok: #5CC08A; --warn: #E0B252;
+    --term-bg: #0B0D11; --t1: #F0A04B; --t2: #3CC2CC; --t3: #A890F0; --t4: #F47272; --tlive: #9CA3AF; --tapc: #FB8B4B;
+    --device: #0B0C0E; --device-2: #1E2126;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1217; --surface: #171B22; --surface-2: #1D222B; --ink: #E7E9ED; --muted: #9BA3AF; --line: #2C323C;
+  --accent: #F0A04B; --accent-soft: #3A2A18; --ok: #5CC08A; --warn: #E0B252;
+  --term-bg: #0B0D11; --t1: #F0A04B; --t2: #3CC2CC; --t3: #A890F0; --t4: #F47272; --tlive: #9CA3AF; --tapc: #FB8B4B;
+  --device: #0B0C0E; --device-2: #1E2126;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); text-underline-offset: 3px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.3; margin: 0; }
+h2 { font-size: 1.5rem; font-weight: 900; }
+h3 { font-size: 1.02rem; font-weight: 700; }
+p { margin: 0; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 980px; margin: 0 auto; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; gap: 18px; }
+.bar .brand { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+.bar nav { overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.bar nav::-webkit-scrollbar { display: none; }
+.bar nav ul { display: flex; gap: 4px; list-style: none; margin: 0; padding: 6px 0; }
+.bar nav a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 13px; white-space: nowrap; }
+.bar nav a:hover { background: var(--surface-2); }
+
+main { padding-block: 32px 80px; }
+main > .wrap { display: flex; flex-direction: column; gap: 64px; }
+section { scroll-margin-top: 64px; display: flex; flex-direction: column; gap: 18px; }
+.head { display: flex; flex-direction: column; gap: 6px; max-width: 68ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); }
+
+.hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 900; letter-spacing: -0.01em; }
+.hero .lede { color: var(--ink); font-size: 1.04rem; max-width: 64ch; }
+
+/* settings strip */
+.settings { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.field input { font: inherit; font-family: var(--font-mono); font-size: 14px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; min-width: 0; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.seg button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 0 0 1px var(--line); }
+.seg button:focus-visible { outline: 2px solid var(--accent); }
+.mode-note { font-size: 13px; color: var(--muted); }
+
+/* flow */
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.box { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.box .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; }
+.box .v { font-weight: 700; font-size: 14px; line-height: 1.4; }
+.box .d { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.box.off { opacity: .35; }
+
+.tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.t1 { color: var(--t1); } .tag.t2 { color: var(--t2); } .tag.t3 { color: var(--t3); } .tag.t4 { color: var(--t4); }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); padding-bottom: 6px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--t4); margin: 0; }
+.tag.live { color: var(--tlive); } .tag.apc { color: var(--tapc); } .tag.mac { color: var(--muted); }
+
+/* steps */
+.progress { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.track { flex: 1; min-width: 120px; max-width: 320px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--ok); transition: width .25s; }
+.btn { all: unset; cursor: pointer; font-size: 13px; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.steps { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.step { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 18px 20px 18px 14px; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step .chk { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 2px; }
+.step .num { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.step input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; cursor: pointer; }
+.step .body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.step .title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.step.done h3 { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.step ul, .step ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 3px; }
+.note { font-size: 13px; color: var(--muted); }
+.warnline { font-size: 13px; color: var(--warn); }
+
+.cmd { display: flex; background: var(--term-bg); color: var(--term-ink); border-radius: 8px; overflow: hidden; min-width: 0; }
+.cmd pre { margin: 0; padding: 10px 14px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; flex: 1; min-width: 0; white-space: pre; }
+.cmd pre::before { content: "$ "; color: var(--term-dim); }
+.cmd button { all: unset; cursor: pointer; padding: 0 14px; font-size: 12px; color: var(--term-ink); border-left: 1px solid rgba(255,255,255,.12); white-space: nowrap; }
+.cmd button:hover { background: rgba(255,255,255,.08); }
+.cmd button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.expect { border-left: 2px solid var(--ok); padding: 6px 12px; background: var(--surface-2); border-radius: 0 6px 6px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.expect .lab { font-size: 11px; color: var(--ok); font-weight: 500; letter-spacing: .04em; }
+.expect pre { margin: 0; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+
+/* Live prefs mock */
+.live { background: var(--live-bg); color: var(--live-ink); border-radius: 8px; padding: 14px; font-family: -apple-system, "Helvetica Neue", var(--font-body); font-size: 12px; display: flex; flex-direction: column; gap: 12px; overflow-x: auto; }
+.live table { border-collapse: separate; border-spacing: 0 3px; min-width: 520px; }
+.live th { text-align: left; font-weight: 500; color: #A9A9A9; padding: 2px 8px; }
+.live td { background: var(--live-row); padding: 5px 8px; white-space: nowrap; }
+.live td:first-child { border-radius: 3px 0 0 3px; }
+.live td:last-child { border-radius: 0 3px 3px 0; }
+.live .set { outline: 2px solid var(--live-on); outline-offset: -2px; color: #FFF; font-weight: 600; }
+.live .tog { display: inline-block; min-width: 34px; text-align: center; border-radius: 3px; padding: 0 6px; background: #4A4A4A; color: #BDBDBD; }
+.live .tog.on { background: var(--live-on); color: #222; font-weight: 700; }
+.live .cap { font-size: 11px; color: #A9A9A9; letter-spacing: .06em; text-transform: uppercase; }
+
+/* APC40 map */
+.apc-wrap { overflow-x: auto; }
+.apc { background: var(--device); color: var(--device-ink); border-radius: 14px; padding: 16px; min-width: 680px; display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 16px; }
+.cols { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)) 64px; gap: 6px; align-items: center; }
+.lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; color: var(--device-dim); text-align: center; line-height: 1.2; }
+.hw { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 4px; height: 26px; background: var(--device-2); border: 1px solid #000; font-family: var(--font-mono); font-size: 9px; color: var(--device-ink); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.1; padding: 0 2px; overflow: hidden; }
+.hw:hover { filter: brightness(1.3); }
+.hw:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.hw.sel { outline: 2px solid #fff; outline-offset: 1px; }
+.hw.pad { height: 30px; color: #111; font-weight: 600; }
+.hw.lit { background: var(--ring); color: #1A1006; }
+.hw.dead { cursor: default; opacity: .35; }
+.hw.dead:hover { filter: none; }
+.hw.round { border-radius: 50%; width: 30px; height: 30px; margin: 0 auto; }
+.fader { height: 64px; width: 14px; margin: 0 auto; border-radius: 3px; position: relative; }
+.fader::after { content: ""; position: absolute; left: -6px; right: -6px; top: 40%; height: 10px; border-radius: 2px; background: #BFC3CA; }
+.side { display: flex; flex-direction: column; gap: 8px; }
+.knobs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.info { border-top: 1px solid var(--device-2); grid-column: 1 / -1; padding-top: 12px; display: flex; flex-direction: column; gap: 4px; min-height: 64px; }
+.info .t { font-weight: 700; font-size: 14px; color: #fff; }
+.info .d { font-size: 13px; color: var(--device-ink); }
+
+details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+summary { cursor: pointer; padding: 12px 16px; font-weight: 500; }
+details > div { padding: 0 16px 14px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+.faq { display: flex; flex-direction: column; gap: 8px; }
+
+footer { border-top: 1px solid var(--line); padding-block: 24px 40px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 560px) {
+  main > .wrap { gap: 52px; }
+  .step { grid-template-columns: 32px minmax(0, 1fr); padding-right: 14px; }
+  .bar .brand { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+</style>
+
+<header class="bar gutter">
+  <div class="wrap">
+    <span class="brand">KAIDAN / RUNBOOK</span>
+    <nav aria-label="セクション"><ul>
+      <li><a href="#flow">構成</a></li>
+      <li><a href="#prep">準備</a></li>
+      <li><a href="#start">起動</a></li>
+      <li><a href="#live">Live の設定</a></li>
+      <li><a href="#apc">APC40</a></li>
+      <li><a href="#stop">終了</a></li>
+      <li><a href="#trouble">困ったとき</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<main class="gutter">
+<div class="wrap">
+
+  <section class="hero" id="top">
+    <span class="eyebrow">APC40 mkII · Ableton Live · LM70S</span>
+    <h1>怪談サイコロ起動手順</h1>
+    <p class="lede">実機をつないでから、ターミナルとLive、APC40の順に立ち上げるための手順です。使い方を選び、先方のブリッジのアドレスを確かめてください。下のコマンドがすべて、それに合わせて書き換わります。</p>
+    <div class="settings">
+      <div class="seg" role="group" aria-label="使い方" id="mode">
+        <button type="button" data-mode="live" aria-pressed="true">Live と一緒に使う</button>
+        <button type="button" data-mode="direct" aria-pressed="false">Live を使わない</button>
+        <button type="button" data-mode="nohw" aria-pressed="false">機材なしで確認</button>
+      </div>
+      <p class="mode-note" id="mode-note"></p>
+      <div class="row">
+        <label class="field" for="host">先方のブリッジ（LM70S）の IP
+          <input id="host" type="text" value="192.168.128.135" spellcheck="false" style="width:170px">
+        </label>
+        <label class="field" for="port">OSC ポート
+          <input id="port" type="text" value="9004" spellcheck="false" style="width:80px">
+        </label>
+        <label class="field" for="sport">状態ページのポート
+          <input id="sport" type="text" value="8804" spellcheck="false" style="width:80px">
+        </label>
+        <label class="field" for="repo">プロジェクトの場所
+          <input id="repo" type="text" value="~/dev/lm70s-osc" spellcheck="false" style="width:190px">
+        </label>
+        <label class="field" for="lrepo">LaserCube Local の場所
+          <input id="lrepo" type="text" value="~/dev/lasercube-local" spellcheck="false" style="width:200px">
+        </label>
+        <label class="check" for="laser"><input id="laser" type="checkbox" checked> レーザー（LaserCube）も使う</label>
+        <button type="button" class="btn" id="reset-settings">初期値に戻す</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="head">
+      <span class="eyebrow">What runs where</span>
+      <h2>構成</h2>
+      <p class="lede">この Mac で開くターミナルと、それぞれの役目です。色のタグは、下の手順の「どこで操作するか」と対応しています。</p>
+    </div>
+    <div class="flow" id="flow-boxes"></div>
+  </section>
+
+  <section id="prep">
+    <div class="head">
+      <span class="eyebrow">Before you start</span>
+      <h2>準備</h2>
+    </div>
+    <ol class="steps" id="prep-steps"></ol>
+  </section>
+
+  <section id="start">
+    <div class="head">
+      <span class="eyebrow">Start-up</span>
+      <h2>起動</h2>
+      <p class="lede">上から順に進めます。チェックは、このブラウザに保存されます。</p>
+    </div>
+    <div class="progress"><span id="progress-text"></span><div class="track"><div class="fill" id="progress-fill"></div></div><button type="button" class="btn" id="reset-checks">チェックを外す</button></div>
+    <ol class="steps" id="start-steps"></ol>
+  </section>
+
+  <section id="live">
+    <div class="head">
+      <span class="eyebrow">Ableton Live › Settings › Link, Tempo &amp; MIDI</span>
+      <h2>Live の設定</h2>
+      <p class="lede">黄色い枠の箇所を、この表のとおりにします。「APC40 proxy」は、ターミナル 2 の apc_proxy.py が動いている間だけ一覧に出ます。</p>
+    </div>
+    <div class="live" id="live-mock"></div>
+  </section>
+
+  <section id="apc">
+    <div class="head">
+      <span class="eyebrow">Control map</span>
+      <h2>APC40 の操作</h2>
+      <p class="lede">怪談サイコロ側にしているとき（MASTER が点灯）の割り当てです。ボタンを押すと説明が出ます。ノブはいつも Live で LM70S を操作します。</p>
+    </div>
+    <div class="apc-wrap"><div class="apc" id="apc-map"></div></div>
+  </section>
+
+  <section id="stop">
+    <div class="head">
+      <span class="eyebrow">Shut-down</span>
+      <h2>終了</h2>
+    </div>
+    <ol class="steps" id="stop-steps"></ol>
+  </section>
+
+  <section id="trouble">
+    <div class="head">
+      <span class="eyebrow">Troubleshooting</span>
+      <h2>困ったとき</h2>
+    </div>
+    <div class="faq" id="faq"></div>
+  </section>
+
+</div>
+</main>
+
+<footer class="gutter"><div class="wrap">
+  <p>録音はご本人の語りとみられます。人前で流す前に、使ってよいか確認してください。詳しい説明はプロジェクトの <code>kaidan/README.md</code> と、ルートの README の 10・11 章にあります。</p>
+</div></footer>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* ---------- settings ---------- */
+  const DEFAULTS = { mode: "live", host: "192.168.128.135", port: "9004", sport: "8804", repo: "~/dev/lm70s-osc",
+                     lrepo: "~/dev/lasercube-local", laser: true };
+  const S = Object.assign({}, DEFAULTS, store.get("kaidan-runbook-settings", {}));
+  const MODES = {
+    live: "Live を開いたまま、ノブで LM70S を、パッドとフェーダーで怪談サイコロを操作します。ターミナルは 3 つです。",
+    direct: "Live を使わず、怪談サイコロが APC40 を全部受け持ちます。ノブは使いません。ターミナルは 2 つです。",
+    nohw: "APC40 もライトもなしで、デモの音を流したり、キーボードで操作したりして確かめます。ターミナルは 1 つです。",
+  };
+  function save() { store.set("kaidan-runbook-settings", S); }
+  function syncInputs() {
+    ["host", "port", "sport", "repo", "lrepo"].forEach(k => { $("#" + k).value = S[k]; });
+    $("#laser").checked = S.laser;
+    $$("#mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
+  }
+  ["host", "port", "sport", "repo", "lrepo"].forEach(k => $("#" + k).addEventListener("input", e => { S[k] = e.target.value.trim() || DEFAULTS[k]; save(); render(); }));
+  $("#laser").addEventListener("change", e => { S.laser = e.target.checked; save(); render(); });
+  $("#mode").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    S.mode = b.dataset.mode; save(); syncInputs(); render();
+  });
+  $("#reset-settings").addEventListener("click", () => { Object.assign(S, DEFAULTS); save(); syncInputs(); render(); });
+
+  /* ---------- commands ---------- */
+  const py = path => `cd ${S.repo} && .venv/bin/python ${path}`;
+  const CMD = {
+    ping: () => `ping -c 2 ${S.host}`,
+    relay: () => py(`tools/osc_relay.py --target ${S.host}:${S.port} --changes-only`),
+    proxy: () => py("tools/apc_proxy.py"),
+    kaidan: () => py("kaidan/kaidan_dice.py"),
+    direct: () => py("kaidan/kaidan_dice.py --apc direct"),
+    demo: () => py("kaidan/kaidan_dice.py --demo --no-lights"),
+    sim: () => py("kaidan/kaidan_dice.py --simulate --no-lights"),
+    laser: () => `cd ${S.lrepo} && python3 app.py --open`,
+    ports: () => "lsof -nP -iUDP:9000 -iUDP:9002 -iUDP:9110 -iUDP:9111",
+  };
+  const statusUrl = () => `http://${S.host}:${S.sport}/`;
+
+  let uid = 0;
+  function cmdBlock(text) {
+    const id = "c" + (++uid);
+    return `<div class="cmd"><pre id="${id}">${esc(text)}</pre><button type="button" data-copy="${id}">コピー</button></div>`;
+  }
+  function expect(lines, label = "うまくいったときの表示") {
+    return `<div class="expect"><span class="lab">${esc(label)}</span><pre>${esc(lines)}</pre></div>`;
+  }
+  const TAG = {
+    t1: '<span class="tag t1">ターミナル 1</span>', t2: '<span class="tag t2">ターミナル 2</span>',
+    t3: '<span class="tag t3">ターミナル 3</span>', live: '<span class="tag live">Ableton Live</span>',
+    apc: '<span class="tag apc">APC40</span>', mac: '<span class="tag mac">この Mac</span>',
+    t4: '<span class="tag t4">ターミナル 4</span>',
+  };
+  const LASER_APP_STEP = () => ({ id: "s-laserapp", tag: "t4", title: "LaserCube Local を起動する", body: `<p>4 つ目のターミナルで実行します。Chrome で操作画面（localhost:8765）が開きます。起動直後は必ずデモモード（本体には出力しない）です。</p>${cmdBlock(CMD.laser())}${expect("LaserCube Local: http://localhost:8765\nデモモードで起動しました。終了: Control+C")}<ul><li><b>画面は開いたままにします。</b>画面からの通信が 3 秒途切れると、レーザーは止まります</li><li>画面の「MIDIを接続」は押しません（APC40 の操作が二重に届くため）</li><li>怪談サイコロの方に <code>LaserCube Local: OSC の受信を 127.0.0.1:9002 で有効にしました</code> と出れば、つながっています（起動の順番はどちらが先でもかまいません）</li><li>実機に出すときは、画面で「LaserCube実機」を選び、確認欄にチェックして「実機への出力操作を許可」を押します</li></ul>` });
+  const LASER_PLAY_STEP = () => ({ id: "s-laser", tag: "apc", title: "SOLO 2 でレーザーを点ける", body: `<p>SOLO 2 が点灯すれば出力中です。もう一度押すと止まります。実機では、画面で出力を許可していないと開始は断られます。</p><ul><li>SOLO 3〜6：円・8の字・三角・赤い手形</li><li>SOLO 7：怪談に連動（ムードで色、緊張で速さ、怪異の場面で 3 秒だけ赤い手形 × 8）。連動はレーザーを点けも消しもしません</li><li>SOLO 8：色を次へ。フェーダー 7 / 8：明るさ / 大きさ。クロスフェーダー：手の数</li></ul><p class="warnline">投影先に人の目がないこと、本体の緊急停止の手段を必ず確かめてください。</p>` });
+
+  /* ---------- data: flow, prep, steps, stop, faq ---------- */
+  function flowBoxes() {
+    const m = S.mode;
+    return [
+      { k: "ターミナル 1", c: "var(--t1)", v: m === "nohw" ? "怪談サイコロ（機材なし）" : "照明の中継", d: m === "nohw" ? "kaidan_dice.py --demo / --simulate" : `osc_relay.py → ${S.host}:${S.port}`, on: true },
+      { k: "ターミナル 2", c: "var(--t2)", v: m === "direct" ? "怪談サイコロ（直接）" : "APC40 の中継役", d: m === "direct" ? "kaidan_dice.py --apc direct" : "apc_proxy.py（仮想ポート APC40 proxy）", on: m !== "nohw" },
+      { k: "ターミナル 3", c: "var(--t3)", v: "怪談サイコロ", d: "kaidan_dice.py（音・照明・LED）", on: m === "live" },
+      { k: "Ableton Live", c: "var(--tlive)", v: "ノブ → LM70S", d: "LM70S トラック + LM70S_OSC", on: m === "live" },
+      { k: "先方の Mac", c: "var(--muted)", v: "LM70S のブリッジ", d: `${S.host}:${S.port}（状態ページ :${S.sport}）`, on: m !== "nohw" },
+      { k: "ターミナル 4", c: "var(--t4)", v: "LaserCube Local", d: "app.py（画面 localhost:8765・OSC :9002）", on: S.laser },
+    ];
+  }
+
+  function prepSteps() {
+    if (S.mode === "nohw") {
+      return [{ id: "p-sound", tag: "mac", title: "音の出力先を確かめる", body: `<p>デモは Mac のスピーカー（システム設定 › サウンド › 出力）から鳴ります。最初は音量を小さめにしてください。</p>` }];
+    }
+    const list = [
+      { id: "p-usb", tag: "apc", title: "APC40 を USB でこの Mac につなぐ", body: `<p>電源が入り、パッドの LED が点けば認識されています。</p>` },
+      { id: "p-net", tag: "mac", title: "先方の Mac と同じルータにつなぐ", body: `<p>Wi-Fi か有線で、先方の Mac と同じネットワークに入ります。届くか確かめます。</p>${cmdBlock(CMD.ping())}${expect(`2 packets transmitted, 2 packets received, 0.0% packet loss`)}<p class="note">先方の状態ページ <a href="${esc(statusUrl())}" target="_blank" rel="noopener">${esc(statusUrl())}</a> が開けば、ブリッジも動いています。開けないときは、先方にブリッジの起動を頼みます。IP が変わっていたら、上の入力欄を書き換えます。</p>` },
+      { id: "p-oldrelay", tag: "t1", title: "前に起動した照明の中継を止める", body: `<p>前から動いている <code>osc_relay.py</code>（<code>--changes-only</code> なし）があれば、そのターミナルで <kbd>Ctrl</kbd>+<kbd>C</kbd> を押して止めます。同じポートを使うので、止めないと次の手順で起動できません。</p><p class="note">何が動いているか分からないときは、次のコマンドで確かめます。何も表示されなければ空いています。</p>${cmdBlock(CMD.ports())}` },
+    ];
+    if (S.mode === "live") {
+      list.push({ id: "p-set", tag: "live", title: "LM70S トラックのある Live セットを用意する", body: `<p>前に作った、トラック <code>LM70S</code>（空の Instrument Rack、Macro 1〜8 を Pan・Tilt・Dimmer・Strobe・R・G・B・W に合わせたもの）のあるセットを保存しておきます。Live はまだ開かなくてかまいません。</p>` });
+    } else {
+      list.push({ id: "p-quitlive", tag: "live", title: "Live を閉じる（または APC40 を外す）", body: `<p>Live が APC40 を使っていると、LED と操作がぶつかります。Live を終了するか、Settings の Control Surface 1 を <code>None</code> にします。</p>` });
+    }
+    if (S.laser) {
+      list.push({ id: "p-laser", tag: "mac", title: "LaserCube を LAN でつなぐ（実機に出すとき）", body: `<ol><li>Mac → USB-C ハブ → LAN ケーブル → LaserCube の LAN 端子</li><li>本体を LAN Server モードにする（Mac の有線 LAN は DHCP）。Wi-Fi も使うときは、ネットワークの順序で Wi-Fi を有線 LAN より上にする</li><li>LaserOS など、他のレーザー制御アプリは終了しておく</li><li>投影先と、本体の緊急停止の手段を確かめる</li></ol><p class="note">デモモードで試すだけなら、本体をつながなくてもかまいません。</p>` });
+    }
+    return list;
+  }
+
+  function startSteps() {
+    if (S.mode === "nohw") {
+      return [
+        { id: "s-demo", tag: "t1", title: "デモの音を流す", body: `<p>APC40 の SOLO 1 と同じ約 85 秒のデモが、音だけ流れます。ライトには送りません。</p>${cmdBlock(CMD.demo())}${expect("怪談サイコロ: 8 話（照明 127.0.0.1:9000、送信なし）。Ctrl+C で終了。\nデモ開始（SOLO 1 をもう一度押すと止まる）\n▶ 押入れの向こう / 導入 …")}<p class="note">終わったら <kbd>Ctrl</kbd>+<kbd>C</kbd> で閉じます。</p>` },
+        { id: "s-sim", tag: "t1", title: "キーボードで操作してみる", body: `${cmdBlock(CMD.sim())}<ul><li><code>p 6 4</code>：6 列目（押入れの向こう）の 4 段目（怪異）から流す</li><li><code>r</code>：話のサイコロ、<code>d</code>：ドン！、<code>k</code>：ブラックアウト、<code>m 2</code>：蝋燭のムード</li><li><code>demo</code>：デモ、<code>i</code>：いまの状態、<code>q</code>：終了</li>${S.laser ? "<li><code>L</code>：レーザーの開始 / 停止、<code>L hands</code>：赤い手形、<code>L link</code>：連動、<code>L d 1</code>：手を 8 体（LaserCube Local の画面のプレビューで動きを見られます）</li>" : ""}</ul>` },
+        ...(S.laser ? [LASER_APP_STEP()] : []),
+      ];
+    }
+    const relay = { id: "s-relay", tag: "t1", title: "照明の中継を起動する", body: `<p>新しいターミナルを開いて実行します。<code>--changes-only</code> を付けるのは、Live が 1 秒ごとに送り直す値で、怪談の照明を上書きしないためです。</p>${cmdBlock(CMD.relay())}${expect(`relay 127.0.0.1:9000 -> ${S.host}:${S.port}  mode=passthrough  (Ctrl+C to quit)`)}` };
+    if (S.mode === "direct") {
+      return [
+        relay,
+        { id: "s-direct", tag: "t2", title: "怪談サイコロを起動する（APC40 を直接使う）", body: `${cmdBlock(CMD.direct())}${expect("怪談サイコロ: 8 話（照明 127.0.0.1:9000）。Ctrl+C で終了。")}<p class="note">起動するとライトはいったん暗くなり、パッドに 8 話の色が点きます。</p>` },
+        ...(S.laser ? [LASER_APP_STEP()] : []),
+        { id: "s-try", tag: "apc", title: "動かしてみる", body: `<ul><li>パッドの左上を押すと、1 列目の話が導入から始まる</li><li><b>SOLO 1</b> でワンタップデモ（約 85 秒、点滅中はデモ中）</li><li>SCENE LAUNCH 1 で話のサイコロ</li></ul>` },
+        ...(S.laser ? [LASER_PLAY_STEP()] : []),
+      ];
+    }
+    return [
+      relay,
+      { id: "s-proxy", tag: "t2", title: "APC40 の中継役を起動する", body: `<p>2 つ目のターミナルで実行します。Live より先に起動しておくと、Live の一覧に「APC40 proxy」が出ます。</p>${cmdBlock(CMD.proxy())}${expect("APC40 (device id 0x00) <-> Live via virtual port 'APC40 proxy'; remote app OSC on :9111. SHIFT + MASTER toggles.")}<p class="note">device id の値は機器によって変わることがあります。</p>` },
+      { id: "s-live", tag: "live", title: "Live を開いて、APC40 を中継役経由にする", body: `<ol><li>LM70S トラックのあるセットを開く</li><li><b>Settings › Link, Tempo &amp; MIDI</b> を開き、<a href="#live">Live の設定</a>の表のとおりにする</li><li>トラック <code>LM70S</code> を選び、ノブを回して LM70S が動くか確かめる</li></ol>${expect("LM70S_OSC: track 'LM70S': blue, color, ... -> 127.0.0.1:9000", "Live の下のステータスバー")}` },
+      { id: "s-kaidan", tag: "t3", title: "怪談サイコロを起動する", body: `<p>3 つ目のターミナルで実行します。</p>${cmdBlock(CMD.kaidan())}${expect("apc_proxy.py に接続しました。APC40 で SHIFT + MASTER を押すと、グリッドが怪談サイコロに切り替わります。\n怪談サイコロ: 8 話（照明 127.0.0.1:9000）。Ctrl+C で終了。")}<p class="note">ターミナル 2 には <code>remote app at 127.0.0.1:9110</code> と出ます。起動するとライトはいったん暗くなります。</p>` },
+      ...(S.laser ? [LASER_APP_STEP()] : []),
+      { id: "s-switch", tag: "apc", title: "SHIFT を押しながら MASTER を押す", body: `<p>MASTER が点灯し、パッドに 8 話の色が点けば、怪談サイコロ側に切り替わっています。もう一度押すと Live に戻ります（ノブはどちらでも Live のまま）。</p>${expect("mode: remote (grid, faders -> remote app)", "ターミナル 2")}` },
+      { id: "s-demo", tag: "apc", title: "SOLO 1 でデモを流す", body: `<p>約 85 秒で、サイコロ・話の切り替え・照明ムード・山場のストロボと「ドン」・ブラックアウト・一時停止まで、全部を順に見せます。点滅中はデモ中で、もう一度押すと止まります。途中でパッドを押すと、そのまま手動の操作に移ります。</p>` },
+      ...(S.laser ? [LASER_PLAY_STEP()] : []),
+    ];
+  }
+
+  function stopSteps() {
+    const laserStop = S.laser ? [{ id: "x-laser", tag: "t4", title: "レーザーを止めて LaserCube Local を閉じる", body: "<p>SOLO 2 か、LaserCube Local の画面の停止ボタン（Escape キー）で出力を止めてから、ターミナル 4 で <kbd>Ctrl</kbd>+<kbd>C</kbd> を押します。</p>" }] : [];
+    if (S.mode === "nohw") return [{ id: "x-sim", tag: "t1", title: "Ctrl+C で閉じる", body: "<p>音が止まり、ターミナルに戻ります。</p>" }, ...laserStop];
+    const list = [...laserStop];
+    if (S.mode === "live") list.push({ id: "x-back", tag: "apc", title: "SHIFT + MASTER で Live に戻す（任意）", body: "<p>パッドが Live のクリップ表示に戻ります。</p>" });
+    list.push({ id: "x-kaidan", tag: S.mode === "live" ? "t3" : "t2", title: "怪談サイコロを Ctrl+C で止める", body: "<p>音が止まり、ライトは消灯し、APC40 の LED も消えます。</p>" });
+    if (S.mode === "live") list.push({ id: "x-proxy", tag: "t2", title: "中継役を Ctrl+C で止める", body: "<p>止めると Live から APC40 が見えなくなります。Live だけで使い続けるときは、Control Surface 1 の Input と Output を <code>APC40 mkII</code> に戻し、実物の APC40 の Track と Remote をオンに戻します。</p>" });
+    list.push({ id: "x-relay", tag: "t1", title: "照明の中継を Ctrl+C で止める", body: "<p>ライトは最後の状態のまま、先方のブリッジに残ります。</p>" });
+    return list;
+  }
+
+  function faqItems() {
+    return [
+      ["Live の一覧に「APC40 proxy」が出ない", `<p>ターミナル 2 の <code>apc_proxy.py</code> が動いているか確かめます。動いているなら、Live の Settings をいったん閉じて開き直します。それでも出なければ Live を再起動します。</p>`],
+      ["SHIFT + MASTER で何も変わらない", `<p>ターミナル 3 の怪談サイコロが起動しているか、ターミナル 2 に <code>remote app at 127.0.0.1:9110</code> が出ているかを確かめます。出ていなければ、怪談サイコロを止めて起動し直します。</p>`],
+      ["ライトが動かない", `<p>ターミナル 1 が動いているか確かめます。次に、先方の状態ページ <a href="${esc(statusUrl())}" target="_blank" rel="noopener">${esc(statusUrl())}</a> で受信件数が増えるかを見ます。増えなければ、ネットワークを確かめます。</p>${cmdBlock(CMD.ping())}`],
+      ["怪談の照明がすぐ元に戻る", `<p>ターミナル 1 の中継に <code>--changes-only</code> が付いているか確かめます。付いていないと、Live が 1 秒ごとに送り直す値で上書きされます。</p>`],
+      ["ノブでライトが動かない（Live）", `<p>Live でトラック <code>LM70S</code> を選んでいるか確かめます。他のトラックを選んでも照明を操作したいときは、APC40 の DEV. LOCK を押します。Control Surface 2 が <code>LM70S_OSC</code> になっているかも確かめます。</p>`],
+      ["音が出ない", `<p>Mac の出力先（システム設定 › サウンド）と、トラックフェーダー 1（語り）・2（環境音）が下がっていないかを確かめます。怪談サイコロは起動時の出力先を使うので、出力先を変えたら起動し直します。</p>`],
+      ["「受信を許可しますか」と出た", `<p>許可します。apc_proxy.py と怪談サイコロは、この Mac の中で OSC を受け取ります。</p>`],
+      ["「Address already in use」で起動できない", `<p>前に起動したものが残っています。次のコマンドで使っているプロセスを探し、そのターミナルで <kbd>Ctrl</kbd>+<kbd>C</kbd> を押します。</p>${cmdBlock(CMD.ports())}`],
+      ...(S.laser ? [
+        ["SOLO 2 でレーザーが点かない", `<p>怪談サイコロのターミナルに「LaserCube Local が起動していません」と出ていれば、ターミナル 4 を起動します。実機モードでは、LaserCube Local の画面で「実機への出力操作を許可」を押していないと開始は断られます。画面の接続欄にモデル名と温度が出ているか（本体とつながっているか）も確かめます。</p>`],
+        ["レーザーが 3 秒ほどで止まる", `<p>LaserCube Local の画面が閉じているか、裏に回って通信が止まっています。画面を開いたままにしてください（安全のための仕組みです）。</p>`],
+        ["レーザーの操作が二重に反応する", `<p>LaserCube Local の画面で「MIDIを接続」を押していると、APC40 の操作が画面からも届きます。ページを読み込み直し、MIDI はつながないでください。</p>`],
+        ["「OSC 受信を有効にできませんでした」と出る", `<p>UDP 9002 を別のものが使っています。次のコマンドで探して止めるか、怪談サイコロを <code>--laser 127.0.0.1:9003</code> のように別のポートで起動します。</p>${cmdBlock(CMD.ports())}`],
+      ] : []),
+      ["先方の IP が変わった", `<p>ページ上部の入力欄を書き換えると、コマンドもすべて書き換わります。ターミナル 1 の中継を新しいコマンドで起動し直します。</p>`],
+    ];
+  }
+
+  /* ---------- render ---------- */
+  const CHECK_KEY = "kaidan-runbook-checks";
+  const checks = store.get(CHECK_KEY, {});
+  function stepList(el, steps, numbered, keyPrefix) {
+    el.innerHTML = steps.map((s, i) => {
+      const key = keyPrefix + ":" + S.mode + ":" + s.id;
+      return `<li class="step${checks[key] ? " done" : ""}" data-key="${esc(key)}">
+        <div class="chk"><span class="num">${numbered ? i + 1 : "·"}</span><input type="checkbox" id="chk-${esc(key.replace(/[^a-z0-9-]/gi, "-"))}" ${checks[key] ? "checked" : ""} aria-label="${esc(s.title)} 完了"></div>
+        <div class="body"><div class="title">${TAG[s.tag] || ""}<h3>${s.title}</h3></div>${s.body}</div></li>`;
+    }).join("");
+  }
+  function renderProgress() {
+    const steps = $$("#start-steps .step");
+    const done = steps.filter(s => checks[s.dataset.key]).length;
+    $("#progress-text").textContent = `${done} / ${steps.length} 完了`;
+    $("#progress-fill").style.width = steps.length ? `${done / steps.length * 100}%` : "0";
+  }
+  document.addEventListener("change", e => {
+    const step = e.target.closest(".step"); if (!step || e.target.type !== "checkbox") return;
+    checks[step.dataset.key] = e.target.checked; store.set(CHECK_KEY, checks);
+    step.classList.toggle("done", e.target.checked); renderProgress();
+  });
+  $("#reset-checks").addEventListener("click", () => {
+    Object.keys(checks).filter(k => k.includes(":" + S.mode + ":")).forEach(k => delete checks[k]);
+    store.set(CHECK_KEY, checks); render();
+  });
+
+  function renderLive() {
+    const el = $("#live-mock");
+    if (S.mode !== "live") {
+      el.innerHTML = `<p>${S.mode === "direct" ? "このモードでは、Control Surface 1 を <b>None</b> にする（または Live を閉じる）だけです。" : "このモードでは Live を使いません。"}</p>`;
+      return;
+    }
+    const tog = on => `<span class="tog${on ? " on" : ""}">${on ? "On" : "Off"}</span>`;
+    el.innerHTML = `
+      <span class="cap">Control Surface</span>
+      <table><thead><tr><th></th><th>Control Surface</th><th>Input</th><th>Output</th></tr></thead><tbody>
+        <tr><td>1</td><td>APC40 mkII</td><td class="set">APC40 proxy</td><td class="set">APC40 proxy</td></tr>
+        <tr><td>2</td><td>LM70S_OSC</td><td>None</td><td>None</td></tr>
+        <tr><td>3〜</td><td>None</td><td>None</td><td>None</td></tr>
+      </tbody></table>
+      <span class="cap">MIDI Ports</span>
+      <table><thead><tr><th>Port</th><th>Name</th><th>Track</th><th>Sync</th><th>Remote</th></tr></thead><tbody>
+        <tr><td>In</td><td>APC40 mkII（実物）</td><td class="set">${tog(false)}</td><td>${tog(false)}</td><td class="set">${tog(false)}</td></tr>
+        <tr><td>Out</td><td>APC40 mkII（実物）</td><td class="set">${tog(false)}</td><td class="set">${tog(false)}</td><td class="set">${tog(false)}</td></tr>
+        <tr><td>In</td><td>APC40 proxy</td><td>${tog(false)}</td><td>${tog(false)}</td><td>${tog(true)}</td></tr>
+        <tr><td>Out</td><td>APC40 proxy</td><td>${tog(false)}</td><td>${tog(true)}</td><td>${tog(true)}</td></tr>
+      </tbody></table>
+      <span style="color:#A9A9A9">実物の APC40 は Live に直接さわらせないので、すべて Off にします。APC40 proxy の行は Control Surface として使うだけなので、図と違っていてもかまいません。</span>`;
+  }
+
+  /* APC40 map */
+  const STORIES = [["廃校の分教場", 1], ["峠の同級生", 6], ["トンネルの上の中継", 5], ["公演とホテルの女", 3], ["旅館の楽屋", 2], ["押入れの向こう", 1], ["台湾の心霊探訪", 4], ["赤坂のスタジオ", 3]];
+  const MOOD = { 1: ["青白い月光", "#5078FF"], 2: ["蝋燭のゆらぎ", "#FF6E0A"], 3: ["赤い非常灯", "#FF2020"], 4: ["稲光", "#BEBEFF"], 5: ["闇", "#5A3A9A"], 6: ["霧の緑", "#28FF6E"] };
+  const PARTS = ["導入", "情景", "積み上げ", "怪異", "結末"];
+  const SL = [["話のサイコロ", "押すと列が回って止まり、その話を導入から流します。"], ["開始 / 一時停止", "語りを止めたり再開したりします。止まっているときに押すと、サイコロを振ります。緑の点灯は再生中です。"], ["次の段階", "いまの話の次の段階へ進みます。"], ["ドン！", "ストロボのあと 1 秒暗転し、低い衝撃音が鳴ります。強さはフェーダー 6 で決まります。"], ["前の段階", "いまの話の一つ前の段階へ戻ります。"]];
+  const FADER = ["語りの音量", "環境音（うなり・風）", "心音", "照明の明るさ", "ゆらぎの強さ", "驚かしの強さ", "レーザーの明るさ", "レーザーの大きさ"];
+  const LASER_SOLO = [null, ["LASER", "SOLO 2：レーザーの開始 / 停止", "LaserCube Local にレーザーの開始・停止を送ります。点灯中は出力中です。実機では、画面で出力を許可していないと開始は断られます。"],
+    ["円", "SOLO 3：円", "レーザーの図形を円にします。いまの図形のボタンが点灯します。"],
+    ["8の字", "SOLO 4：8の字", "レーザーの図形を 8 の字にします。"],
+    ["三角", "SOLO 5：三角", "レーザーの図形を三角形にします。"],
+    ["手形", "SOLO 6：赤い手形", "左右の手の輪郭が揺れながら濃くなったり薄くなったりします。手の数はクロスフェーダーで変えます。"],
+    ["連動", "SOLO 7：怪談に連動", "ON の間、照明ムードに合わせて色が、段階の緊張に合わせて速さが変わり、怪異の場面で 3 秒だけ赤い手形 × 8 になります。レーザーを点けたり消したりはしません。"],
+    ["色", "SOLO 8：色を次へ", "赤 → 橙 → 黄 → 緑 → 水色 → 青 → 紫 → 白 の順に変えます。"]];
+  const INFO = {};
+  function hw(id, label, cls, info, style = "") {
+    INFO[id] = info;
+    return `<button type="button" class="hw ${cls}" data-id="${id}" style="${style}" aria-label="${esc(info[0])}">${esc(label)}</button>`;
+  }
+  function renderApc() {
+    let grid = "";
+    for (let c = 0; c < 8; c++) grid += `<span class="lbl">${esc(STORIES[c][0])}</span>`;
+    grid += `<span class="lbl">SCENE</span>`;
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 8; c++) {
+        const [title, mood] = STORIES[c];
+        grid += hw(`pad-${r}-${c}`, PARTS[r], "pad", [`${title} / ${PARTS[r]}`, `${c + 1} 列目の話「${title}」を、${PARTS[r]}から流します。色は照明ムード（${MOOD[mood][0]}）。いま流している段階が点滅します。`], `background:${MOOD[mood][1]}${r === 0 ? "" : "cc"}`);
+      }
+      grid += hw(`sl-${r}`, `SL${r + 1}`, "", [`SCENE LAUNCH ${r + 1}：${SL[r][0]}`, SL[r][1]]);
+    }
+    for (let c = 0; c < 8; c++) grid += hw(`stop-${c}`, "CLIP STOP", "", [`CLIP STOP ${c + 1}`, "その列の話が流れていれば止めます。流れている列が点灯します。"]);
+    grid += hw("stopall", "STOP ALL", "", ["STOP ALL CLIPS：ブラックアウト", "LM70S を消灯します。語りは続きます。もう一度押すと戻ります。点灯中はブラックアウト中です。"]);
+    for (let c = 0; c < 8; c++) {
+      const info = c < 6 ? [`TRACK SELECT ${c + 1}：${MOOD[c + 1][0]}`, `照明ムードを「${MOOD[c + 1][0]}」にします。いまのムードのボタンが点灯します。`]
+        : c === 6 ? ["TRACK SELECT 7：ムードのサイコロ", "照明ムードのサイコロを振ります。"] : ["TRACK SELECT 8：話に合わせる", "照明ムードを、話ごとの既定に戻します。点灯中は話に合わせています。"];
+      grid += hw(`sel-${c}`, c < 6 ? MOOD[c + 1][0] : c === 6 ? "振る" : "自動", c === 7 ? "lit" : "", info);
+    }
+    grid += hw("master", "MASTER", "lit", ["SHIFT + MASTER：切り替え", "SHIFT を押しながら押すと、パッドとフェーダーの行き先が Live ⇔ 怪談サイコロで切り替わります。点灯中は怪談サイコロ側です。"]);
+    for (let c = 0; c < 8; c++) grid += c === 0 ? hw("solo-0", "DEMO", "lit", ["SOLO 1：ワンタップデモ", "約 85 秒で全部の機能を順に見せます。点滅中はデモ中で、もう一度押すと止まります。途中でパッドを押すと手動に移ります。"])
+      : hw(`solo-${c}`, LASER_SOLO[c][0], "", [LASER_SOLO[c][1], LASER_SOLO[c][2]], "border-color: var(--t4)");
+    grid += `<span></span>`;
+    for (let c = 0; c < 8; c++) grid += hw(`fader-${c}`, "", "fader", [`トラックフェーダー ${c + 1}`, `${FADER[c]}を、その場で変えます。` + (c >= 6 ? "（LaserCube Local の上限内：明るさ 0〜5%、大きさ 5〜30%）" : "")]);
+    grid += hw("mfader", "", "fader", ["マスターフェーダー", "LM70S 全体の明るさ（/lm70s/master）を変えます。"]);
+    for (let c = 0; c < 8; c++) grid += `<span class="lbl">${esc(FADER[c].replace("（使わない）", "—"))}</span>`;
+    grid += `<span class="lbl">MASTER</span>`;
+
+    let knobs = "";
+    for (let i = 0; i < 8; i++) knobs += hw(`knob-${i}`, ["Pan", "Tilt", "Dim", "Strb", "R", "G", "B", "W"][i], "round", [`DEVICE CONTROL ノブ ${i + 1}（Live）`, "いつも Live に届き、トラック LM70S の Macro を回して LM70S を手で操作します。怪談サイコロ側にしているときも使えます。"]);
+    $("#apc-map").innerHTML = `
+      <div class="cols">${grid}</div>
+      <div class="side">
+        <span class="lbl" style="text-align:left">DEVICE CONTROL（Live）</span>
+        <div class="knobs">${knobs}</div>
+        ${hw("shift", "SHIFT", "", ["SHIFT", "MASTER と一緒に押して、Live ⇔ 怪談サイコロを切り替えます。"])}
+        ${hw("xfader", "CROSSFADER", "", ["クロスフェーダー：わらわら度", "赤い手形の数を 1〜8 体で変えます（右に倒すほど多い）。"])}
+      </div>
+      <div class="info" id="apc-info" aria-live="polite"><span class="t">ボタンを押すと説明が出ます</span><span class="d">MASTER が点灯していれば、怪談サイコロ側です。</span></div>`;
+  }
+  $("#apc-map").addEventListener("click", e => {
+    const b = e.target.closest(".hw"); if (!b) return;
+    $$("#apc-map .hw.sel").forEach(x => x.classList.remove("sel"));
+    b.classList.add("sel");
+    const [t, d] = INFO[b.dataset.id];
+    $("#apc-info").innerHTML = `<span class="t">${esc(t)}</span><span class="d">${esc(d)}</span>`;
+  });
+
+  function render() {
+    uid = 0;  // command block ids stay unique across all lists on the page
+    $("#mode-note").textContent = MODES[S.mode];
+    $("#flow-boxes").innerHTML = flowBoxes().map(b => `<div class="box${b.on ? "" : " off"}"><span class="k" style="color:${b.c}">${esc(b.k)}</span><span class="v">${esc(b.v)}</span><span class="d">${esc(b.d)}</span></div>`).join("");
+    stepList($("#prep-steps"), prepSteps(), false, "prep");
+    stepList($("#start-steps"), startSteps(), true, "start");
+    stepList($("#stop-steps"), stopSteps(), true, "stop");
+    renderProgress();
+    renderLive();
+    $("#faq").innerHTML = faqItems().map(([q, a]) => `<details><summary>${esc(q)}</summary><div>${a}</div></details>`).join("");
+  }
+
+  /* copy buttons */
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("[data-copy]"); if (!btn) return;
+    const target = document.getElementById(btn.dataset.copy);
+    const done = msg => { btn.textContent = msg; setTimeout(() => { btn.textContent = "コピー"; }, 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(target); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done("選択しました"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(target.textContent).then(() => done("コピーしました"), fallback);
+    else fallback();
+  });
+
+  syncInputs();
+  renderApc();
+  render();
+  if (location.hash) { const t = document.getElementById(location.hash.slice(1)); if (t) setTimeout(() => t.scrollIntoView(), 50); }
+})();
+</script>
