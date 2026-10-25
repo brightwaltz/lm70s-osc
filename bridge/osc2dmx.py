@@ -162,7 +162,11 @@ def main():
     dispatcher = Dispatcher()
     dispatcher.set_default_handler(bridge.handle)
     host, _, port = args.listen.rpartition(":")
-    server = BlockingOSCUDPServer((host or "0.0.0.0", int(port)), dispatcher)
+    try:
+        server = BlockingOSCUDPServer((host or "0.0.0.0", int(port)), dispatcher)
+    except OSError as e:
+        raise SystemExit("cannot listen on %s (%s). Is another osc2dmx.py or osc_relay.py using that port?"
+                         % (args.listen, e))
 
     outputs = open_output(args, fixtures)
     stop = threading.Event()

@@ -69,21 +69,38 @@ class Sender:
                 print("send failed: %s" % e, file=sys.stderr)
 
 
-def passthrough_handler(sender, renames, changes_only=False):
-    last = {}
+class Passthrough:
+    def __init__(self, sender, renames, changes_only=False):
+        self.sender = sender
+        self.renames = renames
+        self.changes_only = changes_only
+        self.last = {}  # (sender's ip:port, address) -> args
+        self.current = {}  # address -> args last forwarded, replayed by run()
+        self.lock = threading.Lock()
 
-    def handle(address, *args):
-        for old, new in renames:
+    def handle(self, client, address, *args):
+        for old, new in self.renames:
             if address == old or address.startswith(old + "/"):
                 address = new + address[len(old):]
                 break
-        if changes_only:
-            if last.get(address) == args:
-                return  # e.g. Live's once-a-second resend: don't overwrite cues another app sent
-            last[address] = args
-        sender.send(address, list(args))
+        if self.changes_only:
+            # Compare per sender: Live's once-a-second resend of an unchanged value is dropped,
+            # even while another app keeps changing the same address.
+            key = (client, address)
+            if self.last.get(key) == args:
+                return
+            self.last[key] = args
+        with self.lock:
+            self.current[address] = args
+        self.sender.send(address, list(args))
 
-    return handle
+    def run(self, stop, interval):
+        """Resend the last forwarded value of every address, so a restarted bridge catches up."""
+        while not stop.wait(interval):
+            with self.lock:
+                items = [(a, args) for a, args in self.current.items() if not a.endswith("/reset")]
+            for address, args in items:
+                self.sender.send(address, list(args))
 
 
 class ChannelRelay:
@@ -141,7 +158,8 @@ def main():
     ap.add_argument("--fixture", action="append", type=parse_fixture, metavar="NAME=ADDR[:MODE]",
                     help="channels: fixture definition like osc2dmx.py (default lm70s=1:14)")
     ap.add_argument("--fps", type=float, default=30.0, help="channels: max sends per second per channel")
-    ap.add_argument("--resend", type=float, default=1.0, help="channels: resend every channel this often, 0 = off")
+    ap.add_argument("--resend", type=float, default=1.0,
+                    help="channels, or passthrough with --changes-only: resend the current values this often, 0 = off")
     ap.add_argument("--dry-run", action="store_true", help="print what would be sent, send nothing")
     ap.add_argument("--verbose", action="store_true", help="print every forwarded message")
     args = ap.parse_args()
@@ -152,7 +170,11 @@ def main():
     worker = None
 
     if args.mode == "passthrough":
-        dispatcher.set_default_handler(passthrough_handler(sender, args.rename, args.changes_only))
+        relay = Passthrough(sender, args.rename, args.changes_only)
+        dispatcher.set_default_handler(relay.handle, needs_reply_address=True)
+        if args.changes_only and args.resend > 0:  # without --changes-only the senders' own resends pass through
+            worker = threading.Thread(target=relay.run, args=(stop, args.resend), daemon=True)
+            worker.start()
     else:
         bridge = Bridge(args.fixture or [LM70S("lm70s", 1, 14)])
         dispatcher.set_default_handler(bridge.handle)
